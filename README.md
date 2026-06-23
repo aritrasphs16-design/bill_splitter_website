@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🏝️ CruiseSplit (Bill Splitter)
 
-## Getting Started
+CruiseSplit is a modern, responsive web application designed to take the headache out of splitting expenses on group trips. Whether you're on a Caribbean Cruise, backpacking across Europe, or just managing weekend getaway costs with friends, CruiseSplit automatically tracks your shared expenses, calculates fair shares, and uses a **Minimum Transaction Settlement Algorithm** so you know exactly who owes who, with the absolute fewest number of transfers required.
 
-First, run the development server:
+## 🚀 Key Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+*   **Captain's Dashboard**: A high-level overview of your total spent, active fleets (groups), and exactly how much you owe or are owed.
+*   **Personal Manifest**: Log and categorize your personal daily expenses (Food, Drinks, Activities, Shopping).
+*   **Shared Fleets (Groups)**: Create trips and invite crew members.
+*   **Smart Settlements**: Add shared group expenses and let the app calculate the net balances. The algorithm ensures everyone gets squared away with the minimum number of transactions possible!
+*   **Authentication**: Secure signup and login powered by Supabase.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ Technology Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+*   **Framework:** [Next.js 15](https://nextjs.org/) (App Router)
+*   **Styling:** Tailwind CSS v4 (with custom CSS variables for a premium, nautical glassmorphism aesthetic)
+*   **Database & Auth:** [Supabase](https://supabase.com/) (PostgreSQL + Row Level Security)
+*   **Icons:** Google Material Symbols
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 💻 Running Locally
 
-## Learn More
+To run this project on your local machine, you'll need Node.js installed.
 
-To learn more about Next.js, take a look at the following resources:
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/aritrasphs16-design/bill_splitter_website.git
+    cd bill_splitter_website
+    ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3.  **Environment Variables:**
+    Create a `.env.local` file in the root directory and add your Supabase credentials:
+    ```env
+    NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+    ```
 
-## Deploy on Vercel
+4.  **Database Setup:**
+    Execute the SQL commands found in `database/schema.sql` within your Supabase SQL Editor to instantly generate the tables, triggers, and Row Level Security (RLS) policies.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+5.  **Start the development server:**
+    ```bash
+    npm run dev
+    ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+6.  Open [http://localhost:3000](http://localhost:3000) in your browser to see the app.
+
+## 🚢 Deployment
+
+This application is optimized for deployment on [Vercel](https://vercel.com/). 
+When deploying, ensure you add the `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to your Vercel Environment Variables. Finally, remember to add your live Vercel URL to your Supabase Authentication Site URL settings.
