@@ -1,0 +1,398 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>CruiseSplit - My Expenses</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&amp;family=Montserrat:wght@400;600;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config from Brand Anchors -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-secondary-fixed": "#001f27",
+                        "surface-bright": "#fff8f5",
+                        "on-primary-fixed-variant": "#004b74",
+                        "background": "#fff8f5",
+                        "primary-fixed": "#cde5ff",
+                        "on-surface": "#1f1b18",
+                        "surface-container-highest": "#eae1dc",
+                        "on-surface-variant": "#404850",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb59c",
+                        "tertiary": "#9d370c",
+                        "on-error-container": "#93000a",
+                        "surface-container": "#f5ece7",
+                        "secondary-container": "#50d9fe",
+                        "on-tertiary-fixed-variant": "#822800",
+                        "inverse-primary": "#94ccff",
+                        "surface-variant": "#eae1dc",
+                        "surface-dim": "#e1d8d3",
+                        "secondary": "#00677d",
+                        "on-secondary-fixed-variant": "#004e5f",
+                        "on-tertiary-fixed": "#380c00",
+                        "on-primary-fixed": "#001d32",
+                        "secondary-fixed-dim": "#4cd6fb",
+                        "primary": "#005d90",
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#34302c",
+                        "tertiary-container": "#be4f24",
+                        "error": "#ba1a1a",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#0077b6",
+                        "on-tertiary-container": "#fff6f3",
+                        "primary-fixed-dim": "#94ccff",
+                        "surface-container-low": "#fbf2ed",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#006399",
+                        "tertiary-fixed": "#ffdbcf",
+                        "surface-container-high": "#efe6e1",
+                        "on-primary-container": "#f3f7ff",
+                        "secondary-fixed": "#b3ebff",
+                        "on-background": "#1f1b18",
+                        "on-secondary-container": "#005c70",
+                        "outline": "#707881",
+                        "surface": "#fff8f5",
+                        "error-container": "#ffdad6",
+                        "inverse-on-surface": "#f8efea",
+                        "outline-variant": "#bfc7d1",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "section-margin": "32px",
+                        "card-gap": "12px",
+                        "container-padding": "24px",
+                        "base": "8px",
+                        "gutter": "16px"
+                    },
+                    fontFamily: {
+                        "headline-lg-mobile": ["Montserrat"],
+                        "headline-lg": ["Montserrat"],
+                        "title-md": ["Montserrat"],
+                        "caption": ["Plus Jakarta Sans"],
+                        "display-lg": ["Montserrat"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-md": ["JetBrains Mono"]
+                    },
+                    fontSize: {
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "title-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom Ticket Button Styles */
+        .ticket-btn {
+            position: relative;
+            background-color: theme('colors.tertiary');
+            color: theme('colors.on-tertiary');
+            border-radius: theme('borderRadius.DEFAULT');
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+        .ticket-btn:hover {
+            background-color: theme('colors.tertiary-container');
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+        .ticket-btn::before {
+            content: '';
+            position: absolute;
+            left: -6px;
+            top: 0;
+            bottom: 0;
+            width: 12px;
+            background-image: radial-gradient(circle at center, theme('colors.surface-container-lowest') 4px, transparent 5px);
+            background-size: 12px 16px;
+            background-position: left center;
+            background-repeat: repeat-y;
+        }
+        
+        /* Wave Underline Input */
+        .wave-input-container {
+            position: relative;
+        }
+        .wave-input-container input {
+            border: none;
+            border-bottom: 2px solid theme('colors.surface-dim');
+            background: transparent;
+            padding-bottom: theme('spacing.base');
+            transition: border-color 0.3s ease;
+        }
+        .wave-input-container input:focus {
+            outline: none;
+            border-bottom-color: transparent;
+        }
+        .wave-line {
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background-image: url("data:image/svg+xml,%3Csvg width='20' height='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 3 Q 5 0, 10 3 T 20 3' fill='none' stroke='%23005d90' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: repeat-x;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        .wave-input-container input:focus ~ .wave-line {
+            opacity: 1;
+            background-image: url("data:image/svg+xml,%3Csvg width='20' height='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 3 Q 5 0, 10 3 T 20 3' fill='none' stroke='%2300677d' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+        }
+
+        /* Ambient Shadows for floating effect */
+        .shadow-buoyant {
+            box-shadow: 0 8px 24px -4px rgba(3, 4, 94, 0.05), 0 4px 12px -2px rgba(3, 4, 94, 0.02);
+        }
+        
+        /* Hide scrollbar for category chips */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col md:flex-row antialiased">
+<!-- TopAppBar (Mobile) -->
+<header class="docked full-width top-0 z-50 bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-md shadow-sm flex justify-between items-center w-full px-container-padding py-4 md:hidden">
+<div class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary dark:text-primary-fixed-dim">CruiseSplit</div>
+<div class="flex gap-4">
+<button class="text-on-surface-variant dark:text-outline hover:text-secondary transition-colors"><span class="material-symbols-outlined">notifications</span></button>
+<button class="text-on-surface-variant dark:text-outline hover:text-secondary transition-colors"><span class="material-symbols-outlined">account_circle</span></button>
+</div>
+</header>
+<!-- SideNavBar (Desktop) -->
+<nav class="bg-surface dark:bg-surface-dim bg-surface-container-low dark:bg-surface-container shadow-sm h-full w-64 fixed left-0 top-0 hidden md:flex flex-col py-6 px-4 z-40">
+<div class="mb-8 px-4">
+<h2 class="font-headline-lg text-headline-lg font-bold text-primary dark:text-primary-fixed-dim">CruiseSplit</h2>
+<div class="mt-4 flex items-center gap-3">
+<img class="w-10 h-10 rounded-full object-cover" data-alt="A small circular profile picture of a cheerful person wearing a nautical striped shirt against a bright blue sky background, conveying a vacation mood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDR7oQhs7DvpeFKZgNAyBZIyLiBPVVKz4d275xCcc-6IvYOJIB-6RwLcpp5bwgFHy9PyRLwbDWpsOSTaAd-HOrfwi3sWKAl2J4pV7Ij_uhHtVwlfxvz-iVYtscPQ03eZIqA03BRUx3WGQuWf2TBD4dCzhTdgMktHlVZvQa3IW5Zyedo9Fx6vRaTIXlSxsuBx2DBdQ7HCehLSOLBZ0RK7hfJXKB1A4HfzHAgq-bWcLn5r7nj9VKO9vhH9f_LiHXm_KUL9wjpy4-KK1c">
+<div>
+<div class="font-title-md text-title-md text-on-surface">Captain's Log</div>
+<div class="font-caption text-caption text-on-surface-variant">Rank: Captain</div>
+</div>
+</div>
+</div>
+<div class="flex-1 space-y-2">
+<!-- Home (Inactive) -->
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant dark:text-outline hover:text-primary hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">anchor</span>
+                Home
+            </a>
+<!-- Expenses (Active) -->
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-primary dark:text-primary-fixed-dim font-bold border-r-4 border-primary bg-primary/5 translate-x-1 transition-transform duration-200 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">receipt_long</span>
+                Expenses
+            </a>
+<!-- Groups (Inactive) -->
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant dark:text-outline hover:text-primary hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">groups</span>
+                Groups
+            </a>
+<!-- Ports (Inactive) -->
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-on-surface-variant dark:text-outline hover:text-primary hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">sailing</span>
+                Ports
+            </a>
+</div>
+<div class="mt-auto px-4">
+<button class="w-full py-3 bg-secondary text-on-secondary rounded-lg font-label-md text-label-md font-bold shadow-md hover:bg-secondary-container hover:text-on-secondary-container transition-colors flex justify-center items-center gap-2">
+<span class="material-symbols-outlined">add</span>
+                Add Expense
+            </button>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 w-full md:ml-64 pb-24 md:pb-8 pt-6 px-container-padding max-w-5xl mx-auto">
+<div class="mb-section-margin">
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-2">My Expenses</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Log your daily adventures and keep the crew sorted.</p>
+</div>
+<!-- Add New Expense Form (Bento/Glassmorphism Card) -->
+<section class="bg-surface-container-lowest rounded-xl p-6 shadow-buoyant border border-surface-variant/50 mb-section-margin relative overflow-hidden">
+<!-- Decorative corner accent -->
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary-fixed/30 rounded-bl-full -mr-8 -mt-8 pointer-events-none"></div>
+<h2 class="font-title-md text-title-md text-secondary mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined">post_add</span>
+                Add New Expense
+            </h2>
+<form class="space-y-6">
+<!-- Description & Amount Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="md:col-span-2 wave-input-container flex flex-col">
+<label class="font-label-md text-label-md text-on-surface-variant mb-1">What was it?</label>
+<input class="w-full font-body-lg text-body-lg text-on-surface placeholder:text-outline-variant" placeholder="e.g., Beach Dinner at Sunset" type="text">
+<div class="wave-line"></div>
+</div>
+<div class="wave-input-container flex flex-col">
+<label class="font-label-md text-label-md text-on-surface-variant mb-1">Amount (₹)</label>
+<div class="flex items-baseline gap-1">
+<span class="font-label-md text-label-md text-outline-variant">₹</span>
+<input class="w-full font-label-md text-label-md text-on-surface placeholder:text-outline-variant font-bold text-lg" placeholder="0.00" step="0.01" type="number">
+</div>
+<div class="wave-line"></div>
+</div>
+</div>
+<!-- Categories (Chips) -->
+<div>
+<label class="font-label-md text-label-md text-on-surface-variant mb-3 block">Category</label>
+<div class="flex gap-3 overflow-x-auto hide-scrollbar pb-2">
+<!-- Active Chip -->
+<label class="cursor-pointer group flex-shrink-0">
+<input checked="" class="hidden" name="category" type="radio" value="food">
+<div class="flex items-center gap-2 px-4 py-2 rounded-full bg-primary-container text-on-primary-container border border-primary-container transition-all group-active:scale-95 shadow-sm">
+<span class="material-symbols-outlined text-sm">restaurant</span>
+<span class="font-label-md text-label-md">Food</span>
+</div>
+</label>
+<!-- Inactive Chips -->
+<label class="cursor-pointer group flex-shrink-0">
+<input class="hidden" name="category" type="radio" value="drinks">
+<div class="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface border border-surface-variant transition-all group-active:scale-95">
+<span class="material-symbols-outlined text-sm">local_bar</span>
+<span class="font-label-md text-label-md">Drinks</span>
+</div>
+</label>
+<label class="cursor-pointer group flex-shrink-0">
+<input class="hidden" name="category" type="radio" value="activities">
+<div class="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface border border-surface-variant transition-all group-active:scale-95">
+<span class="material-symbols-outlined text-sm">surfing</span>
+<span class="font-label-md text-label-md">Activities</span>
+</div>
+</label>
+<label class="cursor-pointer group flex-shrink-0">
+<input class="hidden" name="category" type="radio" value="shopping">
+<div class="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface border border-surface-variant transition-all group-active:scale-95">
+<span class="material-symbols-outlined text-sm">local_mall</span>
+<span class="font-label-md text-label-md">Shopping</span>
+</div>
+</label>
+</div>
+</div>
+<!-- Submit Button -->
+<div class="pt-4 flex justify-end">
+<button class="ticket-btn px-8 py-3 font-title-md text-title-md uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-tertiary/20" type="button">
+                        Add to Log
+                        <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</form>
+</section>
+<!-- Wave Divider SVG -->
+<div class="w-full flex justify-center mb-section-margin opacity-30 pointer-events-none">
+<svg fill="none" height="24" viewBox="0 0 200 24" width="200" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 12C20 12 20 2 40 2C60 2 60 22 80 22C100 22 100 2 120 2C140 2 140 22 160 22C180 22 180 12 200 12" stroke="#005d90" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<!-- Expense Log (Cards Grid) -->
+<section>
+<div class="flex justify-between items-end mb-6">
+<h3 class="font-title-md text-title-md text-primary">Recent Manifest</h3>
+<button class="font-label-md text-label-md text-secondary hover:text-primary transition-colors">View All</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-card-gap">
+<!-- Card 1: Beach Dinner (Sandy background) -->
+<div class="bg-surface-container rounded-xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer active:translate-y-1">
+<div class="w-12 h-12 rounded-full bg-surface-container-lowest flex items-center justify-center text-tertiary shadow-sm shrink-0">
+<span class="material-symbols-outlined">restaurant</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="font-body-md text-body-md font-semibold text-on-surface truncate">Beach Dinner</div>
+<div class="font-caption text-caption text-on-surface-variant flex items-center gap-1 mt-1">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span> Food • Today, 7:30 PM
+                        </div>
+</div>
+<div class="font-label-md text-label-md font-bold text-on-surface shrink-0">₹3,800.00</div>
+</div>
+<!-- Card 2: Margaritas (Sandy background) -->
+<div class="bg-surface-container rounded-xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer active:translate-y-1">
+<div class="w-12 h-12 rounded-full bg-surface-container-lowest flex items-center justify-center text-secondary shadow-sm shrink-0">
+<span class="material-symbols-outlined">local_bar</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="font-body-md text-body-md font-semibold text-on-surface truncate">Margaritas at Sunset</div>
+<div class="font-caption text-caption text-on-surface-variant flex items-center gap-1 mt-1">
+<span class="w-2 h-2 rounded-full bg-secondary"></span> Drinks • Yesterday
+                        </div>
+</div>
+<div class="font-label-md text-label-md font-bold text-on-surface shrink-0">₹2,400.00</div>
+</div>
+<!-- Card 3: Snorkeling (White/Pending style background for contrast) -->
+<div class="bg-surface-container-lowest rounded-xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer active:translate-y-1 border border-surface-variant">
+<div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center text-primary shadow-sm shrink-0">
+<span class="material-symbols-outlined">surfing</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="font-body-md text-body-md font-semibold text-on-surface truncate">Snorkeling Excursion</div>
+<div class="font-caption text-caption text-on-surface-variant flex items-center gap-1 mt-1">
+<span class="w-2 h-2 rounded-full bg-primary"></span> Activities • May 14
+                        </div>
+</div>
+<div class="font-label-md text-label-md font-bold text-on-surface shrink-0">₹7,100.00</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Mobile) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 md:hidden bg-surface/90 dark:bg-surface-dim/90 backdrop-blur-lg shadow-[0_-4px_12px_rgba(3,4,94,0.05)] docked full-width bottom-0 z-50 rounded-t-xl">
+<!-- Home (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-2 hover:bg-secondary-container/50 transition-all font-caption text-caption" href="#">
+<span class="material-symbols-outlined mb-1">anchor</span>
+            Home
+        </a>
+<!-- Expenses (Active) -->
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-full p-2 scale-90 transition-all duration-150 font-caption text-caption font-bold" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">receipt_long</span>
+            Expenses
+        </a>
+<!-- Groups (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-2 hover:bg-secondary-container/50 transition-all font-caption text-caption" href="#">
+<span class="material-symbols-outlined mb-1">groups</span>
+            Groups
+        </a>
+<!-- Ports (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-2 hover:bg-secondary-container/50 transition-all font-caption text-caption" href="#">
+<span class="material-symbols-outlined mb-1">sailing</span>
+            Ports
+        </a>
+</nav>
+<script>
+        // Simple script to handle input wave interactions if needed beyond CSS focus
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentElement.classList.add('is-focused');
+            });
+            input.addEventListener('blur', () => {
+                input.parentElement.classList.remove('is-focused');
+            });
+        });
+    </script>
+
+
+</body></html>

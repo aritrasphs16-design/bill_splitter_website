@@ -1,0 +1,215 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>CruiseSplit - Log In</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed": "#001f27",
+                        "surface-bright": "#fff8f5",
+                        "on-primary-fixed-variant": "#004b74",
+                        "background": "#fff8f5",
+                        "primary-fixed": "#cde5ff",
+                        "on-surface": "#1f1b18",
+                        "surface-container-highest": "#eae1dc",
+                        "on-surface-variant": "#404850",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb59c",
+                        "tertiary": "#9d370c",
+                        "on-error-container": "#93000a",
+                        "surface-container": "#f5ece7",
+                        "secondary-container": "#50d9fe",
+                        "on-tertiary-fixed-variant": "#822800",
+                        "inverse-primary": "#94ccff",
+                        "surface-variant": "#eae1dc",
+                        "surface-dim": "#e1d8d3",
+                        "secondary": "#00677d",
+                        "on-secondary-fixed-variant": "#004e5f",
+                        "on-tertiary-fixed": "#380c00",
+                        "on-primary-fixed": "#001d32",
+                        "secondary-fixed-dim": "#4cd6fb",
+                        "primary": "#005d90",
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#34302c",
+                        "tertiary-container": "#be4f24",
+                        "error": "#ba1a1a",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#0077b6",
+                        "on-tertiary-container": "#fff6f3",
+                        "primary-fixed-dim": "#94ccff",
+                        "surface-container-low": "#fbf2ed",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#006399",
+                        "tertiary-fixed": "#ffdbcf",
+                        "surface-container-high": "#efe6e1",
+                        "on-primary-container": "#f3f7ff",
+                        "secondary-fixed": "#b3ebff",
+                        "on-background": "#1f1b18",
+                        "on-secondary-container": "#005c70",
+                        "outline": "#707881",
+                        "surface": "#fff8f5",
+                        "error-container": "#ffdad6",
+                        "inverse-on-surface": "#f8efea",
+                        "outline-variant": "#bfc7d1",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "section-margin": "32px",
+                        "card-gap": "12px",
+                        "container-padding": "24px",
+                        "base": "8px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Montserrat"],
+                        "headline-lg": ["Montserrat"],
+                        "title-md": ["Montserrat"],
+                        "caption": ["Plus Jakarta Sans"],
+                        "display-lg": ["Montserrat"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-md": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "title-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom Wave Underline for Inputs */
+        .wave-input {
+            border-bottom: 2px solid transparent;
+            background-image: linear-gradient(to right, var(--tw-colors-outline-variant), var(--tw-colors-outline-variant));
+            background-position: bottom left;
+            background-size: 100% 2px;
+            background-repeat: no-repeat;
+            transition: all 0.3s ease;
+        }
+        .wave-input:focus {
+            background-image: linear-gradient(to right, var(--tw-colors-primary), var(--tw-colors-secondary-container));
+            background-size: 100% 2px;
+            outline: none;
+            box-shadow: none;
+        }
+        /* Ticket Edge Effect */
+        .ticket-btn {
+            position: relative;
+            mask-image: radial-gradient(circle at 0 50%, transparent 6px, black 7px), radial-gradient(circle at 100% 50%, transparent 6px, black 7px);
+            mask-size: 51% 100%;
+            mask-repeat: no-repeat;
+            mask-position: left, right;
+            -webkit-mask-image: radial-gradient(circle at 0 50%, transparent 6px, black 7px), radial-gradient(circle at 100% 50%, transparent 6px, black 7px);
+            -webkit-mask-size: 51% 100%;
+            -webkit-mask-repeat: no-repeat;
+            -webkit-mask-position: left, right;
+        }
+        
+        .floating-label-group {
+            position: relative;
+            padding-top: 20px;
+        }
+        .floating-label {
+            position: absolute;
+            top: 28px;
+            left: 0;
+            transition: all 0.2s ease;
+            pointer-events: none;
+        }
+        .wave-input:focus + .floating-label,
+        .wave-input:not(:placeholder-shown) + .floating-label {
+            top: 0;
+            font-size: 12px;
+            color: var(--tw-colors-primary);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body-md text-on-surface antialiased min-h-screen flex items-center justify-center p-container-padding relative overflow-hidden">
+<!-- Decorative Wave Background Elements -->
+<div class="absolute inset-0 z-0 bg-gradient-to-br from-tertiary-fixed-dim via-error-container to-primary-fixed-dim opacity-60"></div><div class="absolute inset-0 z-0 bg-cover bg-bottom opacity-20 mix-blend-multiply" data-alt="A lush tropical sunset scene with silhouetted palm trees swaying against a vibrant, warm gradient sky of coral, pink, and deep sunset blue." style="background-image: url(&quot;https://lh3.googleusercontent.com/aida-public/AB6AXuBkbAsEuO_FcqihzZO5uVbCG2kRe1S8j0hOkcidw_mPrPx4DQCwP5uxlDep9TmbUqmACLUq-2xA6KJr97TSKq5BKX8bA9_kYph_N_fgtsATGpwaPL4crVP7rMQKPYSNmzJD76kcgIrbhCB1J4T6Ic-hxf7mRg1sNnaSFznMCDV4o_QX1jqQuNSxBxzJEDkIlXIw6bnBM7miRnClNF7ltYT9GUurESzfz8zJ-IRiqL8iWeDhhe02ZqF5FFyE_ZcFLkGy7GloLJPh__4&quot;);"></div>
+<!-- Main Login Card -->
+<main class="w-full max-w-md bg-surface-container-lowest rounded-xl shadow-[0_24px_64px_rgba(3,4,94,0.15)] z-10 relative overflow-hidden p-8 border border-surface-container-highest">
+<!-- Header -->
+<div class="text-center mb-8">
+<div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-container text-on-primary-container mb-4 shadow-sm">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">directions_boat</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-primary mb-2">Welcome Aboard <span class="inline-block align-middle">⚓</span></h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Stow your gear and log in to manage your crew's ledger.</p>
+</div>
+<!-- Form -->
+<form class="space-y-6">
+<div class="floating-label-group">
+<input class="wave-input w-full bg-transparent border-0 px-0 py-2 font-label-md text-label-md text-on-surface placeholder-transparent" id="email" placeholder=" " required="" type="email">
+<label class="floating-label font-label-md text-label-md text-on-surface-variant" for="email">Email Address</label>
+</div>
+<div class="floating-label-group relative">
+<input class="wave-input w-full bg-transparent border-0 px-0 py-2 font-label-md text-label-md text-on-surface placeholder-transparent pr-10" id="password" placeholder=" " required="" type="password">
+<label class="floating-label font-label-md text-label-md text-on-surface-variant" for="password">Password</label>
+<!-- Password Toggle -->
+<button aria-label="Toggle password visibility" class="absolute right-0 top-6 text-outline-variant hover:text-primary transition-colors focus:outline-none" type="button">
+<span class="material-symbols-outlined">visibility_off</span>
+</button>
+</div>
+<!-- Actions -->
+<div class="pt-4">
+<button class="ticket-btn w-full bg-tertiary-container hover:bg-tertiary text-on-tertiary-container font-label-md text-label-md py-4 px-6 rounded-lg shadow-sm transition-all active:translate-y-px flex items-center justify-center gap-2 border-l-2 border-r-2 border-dashed border-tertiary-fixed" type="submit">
+<span class="">Log In</span>
+<span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</form>
+<!-- Footer -->
+<div class="mt-8 text-center">
+<p class="font-body-md text-body-md text-on-surface-variant">
+                New to the crew? <br class="md:hidden">
+<a class="text-primary hover:text-secondary font-bold transition-colors inline-flex items-center gap-1 mt-1 md:mt-0" href="#">
+                    Sign up here <span class="inline-block">🌊</span>
+</a>
+</p>
+</div>
+</main>
+<script>
+        // Simple password toggle logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtn = document.querySelector('button[aria-label="Toggle password visibility"]');
+            const passwordInput = document.getElementById('password');
+            const icon = toggleBtn.querySelector('.material-symbols-outlined');
+
+            if(toggleBtn && passwordInput && icon) {
+                toggleBtn.addEventListener('click', () => {
+                    if (passwordInput.type === 'password') {
+                        passwordInput.type = 'text';
+                        icon.textContent = 'visibility';
+                    } else {
+                        passwordInput.type = 'password';
+                        icon.textContent = 'visibility_off';
+                    }
+                });
+            }
+        });
+    </script>
+
+
+</body></html>

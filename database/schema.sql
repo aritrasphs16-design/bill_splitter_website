@@ -1,3 +1,10 @@
+-- Drop existing tables to allow safe re-runs
+DROP TABLE IF EXISTS group_expenses CASCADE;
+DROP TABLE IF EXISTS group_members CASCADE;
+DROP TABLE IF EXISTS shared_groups CASCADE;
+DROP TABLE IF EXISTS personal_expenses CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+
 -- Users table
 CREATE TABLE users (
   id UUID PRIMARY KEY REFERENCES auth.users(id),
@@ -63,14 +70,22 @@ CREATE POLICY "Users can update their own profile" ON users
 CREATE POLICY "Users can manage their own personal expenses" ON personal_expenses
   FOR ALL USING (auth.uid() = user_id);
 
+-- Helper function to check group membership without triggering RLS recursion
+CREATE OR REPLACE FUNCTION public.is_group_member(checking_group_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.group_members
+    WHERE group_id = checking_group_id
+    AND user_id = auth.uid()
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- 3. Shared groups policies
 CREATE POLICY "Users can view groups they are members of" ON shared_groups
   FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM group_members
-      WHERE group_members.group_id = shared_groups.id
-      AND group_members.user_id = auth.uid()
-    )
+    created_by = auth.uid() OR public.is_group_member(id)
   );
 
 CREATE POLICY "Users can create groups" ON shared_groups
@@ -82,24 +97,27 @@ CREATE POLICY "Only the creator can delete their group" ON shared_groups
 -- 4. Group members policies
 CREATE POLICY "Users can view members of their groups" ON group_members
   FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM group_members gm
-      WHERE gm.group_id = group_members.group_id
-      AND gm.user_id = auth.uid()
-    )
+    user_id = auth.uid() OR public.is_group_member(group_id)
   );
 
 CREATE POLICY "Group members can add other members" ON group_members
   FOR INSERT WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM group_members gm
-      WHERE gm.group_id = group_members.group_id
-      AND gm.user_id = auth.uid()
-    ) OR (
+    public.is_group_member(group_id) OR (
       -- the creator adds themselves initially
       EXISTS (
         SELECT 1 FROM shared_groups
-        WHERE shared_groups.id = group_members.group_id
+        WHERE shared_groups.id = group_id
+        AND shared_groups.created_by = auth.uid()
+      )
+    )
+  );
+
+CREATE POLICY "Group members can be deleted by creator or self" ON group_members
+  FOR DELETE USING (
+    user_id = auth.uid() OR (
+      EXISTS (
+        SELECT 1 FROM shared_groups
+        WHERE shared_groups.id = group_id
         AND shared_groups.created_by = auth.uid()
       )
     )
