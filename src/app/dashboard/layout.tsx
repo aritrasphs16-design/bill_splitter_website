@@ -71,8 +71,8 @@ export default function DashboardLayout({
                   <Link
                     href={link.href}
                     className={`flex items-center gap-4 py-3 pl-8 pr-4 transition-all duration-200 ${isActive
-                        ? "text-primary font-bold border-l-[3px] border-primary bg-[#FFF9F2] rounded-r-full shadow-sm"
-                        : "text-on-surface-variant hover:text-primary hover:bg-[#FFF9F2]/50 rounded-r-full border-l-[3px] border-transparent"
+                      ? "text-primary font-bold border-l-[3px] border-primary bg-[#FFF9F2] rounded-r-full shadow-sm"
+                      : "text-on-surface-variant hover:text-primary hover:bg-[#FFF9F2]/50 rounded-r-full border-l-[3px] border-transparent"
                       }`}
                   >
                     <span
@@ -142,8 +142,8 @@ export default function DashboardLayout({
               key={link.name}
               href={link.href}
               className={`flex flex-col items-center justify-center p-2 transition-all duration-150 ${isActive
-                  ? "bg-secondary-container text-on-secondary-container rounded-full scale-90"
-                  : "text-on-surface-variant hover:bg-secondary-container/50 rounded-lg"
+                ? "bg-secondary-container text-on-secondary-container rounded-full scale-90"
+                : "text-on-surface-variant hover:bg-secondary-container/50 rounded-lg"
                 }`}
             >
               <span

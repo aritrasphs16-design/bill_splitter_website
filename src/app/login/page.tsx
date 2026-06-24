@@ -31,6 +31,18 @@ export default function Login() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/dashboard/expenses`,
+      },
+    });
+    if (error) {
+      setError(error.message);
+    }
+  };
+
   return (
     <div className="bg-surface font-body-md text-on-surface antialiased min-h-screen flex w-full flex-1 items-center justify-center p-container-padding relative overflow-hidden">
       {/* Decorative Wave Background Elements */}
@@ -99,7 +111,7 @@ export default function Login() {
           </div>
           
           {/* Actions */}
-          <div className="pt-4">
+          <div className="pt-4 space-y-4">
             <button 
               className="ticket-btn w-full bg-tertiary-container hover:bg-tertiary text-on-tertiary-container font-label-md text-label-md py-4 px-6 rounded-lg shadow-sm transition-all active:translate-y-px flex items-center justify-center gap-2 border-l-2 border-r-2 border-dashed border-tertiary-fixed disabled:opacity-50" 
               type="submit"
@@ -107,6 +119,21 @@ export default function Login() {
             >
               <span>{loading ? "Logging In..." : "Log In"}</span>
               <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </button>
+
+            <div className="relative flex items-center py-1">
+              <div className="flex-grow border-t border-outline-variant/30"></div>
+              <span className="flex-shrink-0 mx-4 text-on-surface-variant font-label-md text-sm">Or</span>
+              <div className="flex-grow border-t border-outline-variant/30"></div>
+            </div>
+
+            <button 
+              type="button"
+              onClick={handleGoogleLogin}
+              className="w-full bg-white text-[#49454f] border border-[#E8E0D5] font-label-md py-3.5 px-6 rounded-xl shadow-sm hover:bg-[#F8F5F2] transition-colors flex items-center justify-center gap-3 font-medium"
+            >
+              <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
+              Sign in with Google
             </button>
           </div>
         </form>

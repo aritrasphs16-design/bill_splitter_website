@@ -36,6 +36,18 @@ export default function Signup() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/dashboard/expenses`,
+      },
+    });
+    if (error) {
+      setError(error.message);
+    }
+  };
+
   return (
     <div className="bg-surface font-body-md text-on-surface antialiased min-h-screen flex w-full flex-1 items-center justify-center p-container-padding relative overflow-hidden">
       {/* Background Decoration: Tropical Sunset Gradient & Palms */}
@@ -133,23 +145,40 @@ export default function Signup() {
           </div>
           
           {/* Primary Button (Boarding Pass Style) */}
-          <button 
-            type="submit"
-            className="relative w-full bg-tertiary text-on-tertiary font-title-md text-title-md py-4 px-6 rounded-lg overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all mt-section-margin group disabled:opacity-50"
-            disabled={loading}
-          >
-            {/* Perforated Edge Detail */}
-            <div className="absolute -left-2 top-0 bottom-0 w-4 flex flex-col justify-evenly py-2 opacity-80">
-              <div className="w-3 h-3 bg-surface-container-lowest rounded-full"></div>
-              <div className="w-3 h-3 bg-surface-container-lowest rounded-full"></div>
-              <div className="w-3 h-3 bg-surface-container-lowest rounded-full"></div>
-              <div className="w-3 h-3 bg-surface-container-lowest rounded-full"></div>
+          <div className="space-y-4 mt-section-margin">
+            <button 
+              type="submit"
+              className="relative w-full bg-tertiary text-on-tertiary font-title-md text-title-md py-4 px-6 rounded-lg overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all group disabled:opacity-50"
+              disabled={loading}
+            >
+              {/* Perforated Edge Detail */}
+              <div className="absolute -left-2 top-0 bottom-0 w-4 flex flex-col justify-evenly py-2 opacity-80">
+                <div className="w-3 h-3 bg-surface-container-lowest rounded-full"></div>
+                <div className="w-3 h-3 bg-surface-container-lowest rounded-full"></div>
+                <div className="w-3 h-3 bg-surface-container-lowest rounded-full"></div>
+                <div className="w-3 h-3 bg-surface-container-lowest rounded-full"></div>
+              </div>
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                {loading ? "Joining..." : "Start Your Journey"}
+                <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+              </span>
+            </button>
+
+            <div className="relative flex items-center py-1">
+              <div className="flex-grow border-t border-outline-variant/30"></div>
+              <span className="flex-shrink-0 mx-4 text-on-surface-variant font-label-md text-sm">Or</span>
+              <div className="flex-grow border-t border-outline-variant/30"></div>
             </div>
-            <span className="relative z-10 flex items-center justify-center gap-2">
-              {loading ? "Joining..." : "Start Your Journey"}
-              <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-            </span>
-          </button>
+
+            <button 
+              type="button"
+              onClick={handleGoogleLogin}
+              className="w-full bg-white text-[#49454f] border border-[#E8E0D5] font-label-md py-3.5 px-6 rounded-xl shadow-sm hover:bg-[#F8F5F2] transition-colors flex items-center justify-center gap-3 font-medium"
+            >
+              <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
+              Sign up with Google
+            </button>
+          </div>
         </form>
         
         {/* Footer Link */}
