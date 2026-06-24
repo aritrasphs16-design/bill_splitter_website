@@ -147,6 +147,19 @@ export default function Login() {
             </Link>
           </p>
         </div>
+
+        {/* GitHub Link */}
+        <div className="mt-6 text-center border-t border-surface-container-highest pt-6">
+          <a 
+            href="https://github.com/aritrasphs16-design/bill_splitter_website" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-label-md text-sm"
+          >
+            <img src="https://www.svgrepo.com/show/512317/github-142.svg" alt="GitHub" className="w-5 h-5 opacity-70" />
+            View Source on GitHub
+          </a>
+        </div>
       </main>
     </div>
   );
