@@ -10,6 +10,7 @@ CREATE TABLE users (
   id UUID PRIMARY KEY REFERENCES auth.users(id),
   email TEXT UNIQUE NOT NULL,
   full_name TEXT NOT NULL,
+  upi_id TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -37,6 +38,7 @@ CREATE TABLE group_members (
   group_id UUID REFERENCES shared_groups(id) ON DELETE CASCADE NOT NULL,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
   joined_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  last_read_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   UNIQUE(group_id, user_id)
 );
 
@@ -50,6 +52,25 @@ CREATE TABLE group_expenses (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Group settlements table (when a user pays back a debt)
+CREATE TABLE group_settlements (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  group_id UUID REFERENCES shared_groups(id) ON DELETE CASCADE NOT NULL,
+  paid_by UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  paid_to UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  amount DECIMAL(10, 2) NOT NULL CHECK (amount > 0),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Group messages table
+CREATE TABLE group_messages (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  group_id UUID REFERENCES shared_groups(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  message TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
 -- ROW LEVEL SECURITY (RLS) POLICIES
 
 -- Enable RLS on all tables
@@ -58,10 +79,12 @@ ALTER TABLE personal_expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE shared_groups ENABLE ROW LEVEL SECURITY;
 ALTER TABLE group_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE group_expenses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE group_settlements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE group_messages ENABLE ROW LEVEL SECURITY;
 
 -- 1. Users policies
-CREATE POLICY "Users can view their own profile" ON users
-  FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users are viewable by everyone" ON users
+  FOR SELECT USING (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Users can update their own profile" ON users
   FOR UPDATE USING (auth.uid() = id);
@@ -123,6 +146,9 @@ CREATE POLICY "Group members can be deleted by creator or self" ON group_members
     )
   );
 
+CREATE POLICY "Users can update their own membership" ON group_members
+  FOR UPDATE USING (user_id = auth.uid());
+
 -- 5. Group expenses policies
 CREATE POLICY "Users can view expenses of their groups" ON group_expenses
   FOR SELECT USING (
@@ -144,6 +170,44 @@ CREATE POLICY "Group members can add group expenses" ON group_expenses
 
 CREATE POLICY "Users can delete group expenses they created" ON group_expenses
   FOR DELETE USING (auth.uid() = paid_by);
+
+-- 5.5 Group settlements policies
+CREATE POLICY "Users can view settlements of their groups" ON group_settlements
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM group_members
+      WHERE group_members.group_id = group_settlements.group_id
+      AND group_members.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Group members can add settlements" ON group_settlements
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM group_members
+      WHERE group_members.group_id = group_settlements.group_id
+      AND group_members.user_id = auth.uid()
+    ) AND auth.uid() = paid_by
+  );
+
+-- 6. Group messages policies
+CREATE POLICY "Users can view messages of their groups" ON group_messages
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM group_members
+      WHERE group_members.group_id = group_messages.group_id
+      AND group_members.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Group members can insert messages" ON group_messages
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM group_members
+      WHERE group_members.group_id = group_messages.group_id
+      AND group_members.user_id = auth.uid()
+    ) AND auth.uid() = user_id
+  );
 
 -- Create a trigger function to handle new user registration from auth.users
 CREATE OR REPLACE FUNCTION public.handle_new_user()

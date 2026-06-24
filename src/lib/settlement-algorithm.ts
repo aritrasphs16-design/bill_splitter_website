@@ -3,12 +3,14 @@ export type Transaction = {
   fromName: string;
   to: string;
   toName: string;
+  toUpiId?: string;
   amount: number;
 };
 
 export type Member = {
   id: string;
   name: string;
+  upiId?: string;
 };
 
 export type ExpenseInfo = {
@@ -16,27 +18,42 @@ export type ExpenseInfo = {
   amount: number;
 };
 
-export function calculateSettlements(members: Member[], expenses: ExpenseInfo[]): Transaction[] {
+export type SettlementInfo = {
+  paidBy: string;
+  paidTo: string;
+  amount: number;
+};
+
+export function calculateSettlements(members: Member[], expenses: ExpenseInfo[], settlements: SettlementInfo[] = []): Transaction[] {
   if (members.length === 0) return [];
 
   // Initialize net balances
   const balances: Record<string, number> = {};
-  members.forEach(m => balances[m.id] = 0);
+  const upiMap: Record<string, string> = {};
+  members.forEach(m => {
+    balances[m.id] = 0;
+    if (m.upiId) upiMap[m.id] = m.upiId;
+  });
 
-  // Add what each person paid
+  // Add what each person paid for group expenses
   expenses.forEach(e => {
-    // Only process expenses for current members (just in case)
     if (balances[e.paidBy] !== undefined) {
       balances[e.paidBy] += e.amount;
     }
   });
 
-  // Subtract what each person owes
+  // Subtract what each person owes (equal split)
   const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
   const sharePerPerson = totalSpent / members.length;
 
   members.forEach(m => {
     balances[m.id] -= sharePerPerson;
+  });
+
+  // Apply manual direct settlements (A pays B)
+  settlements.forEach(s => {
+    if (balances[s.paidBy] !== undefined) balances[s.paidBy] += s.amount;
+    if (balances[s.paidTo] !== undefined) balances[s.paidTo] -= s.amount;
   });
 
   // Separate debtors (negative balance) and creditors (positive balance)
@@ -68,6 +85,7 @@ export function calculateSettlements(members: Member[], expenses: ExpenseInfo[])
         fromName: debtor.name,
         to: creditor.id,
         toName: creditor.name,
+        toUpiId: upiMap[creditor.id],
         amount: roundedAmount,
       });
     }

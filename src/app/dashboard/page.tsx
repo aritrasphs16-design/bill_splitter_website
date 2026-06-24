@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import { calculateSettlements, Member, ExpenseInfo } from "@/lib/settlement-algorithm";
 
 export default function Dashboard() {
   const [totalSpent, setTotalSpent] = useState(0);
@@ -10,6 +11,13 @@ export default function Dashboard() {
   const [recentExpenses, setRecentExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
+  const [youOwe, setYouOwe] = useState(0);
+  const [owedToYou, setOwedToYou] = useState(0);
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
+  
+  const [upiId, setUpiId] = useState("");
+  const [savingUpi, setSavingUpi] = useState(false);
+
   const [weather, setWeather] = useState({ temp: "--°C", desc: "Loading...", icon: "☀️" });
 
   useEffect(() => {
@@ -61,6 +69,12 @@ export default function Dashboard() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
+      // Fetch user profile for UPI ID
+      const { data: profile } = await supabase.from("users").select("upi_id").eq("id", session.user.id).single();
+      if (profile && profile.upi_id) {
+        setUpiId(profile.upi_id);
+      }
+
       // Fetch personal expenses
       const { data: expenses } = await supabase
         .from("personal_expenses")
@@ -75,13 +89,79 @@ export default function Dashboard() {
       }
 
       // Fetch groups count
-      const { count } = await supabase
+      const { count, data: groups } = await supabase
         .from("shared_groups")
-        .select("*", { count: 'exact', head: true });
+        .select("id", { count: 'exact' });
 
       if (count !== null) {
         setActiveGroups(count);
       }
+
+      // Calculate Global Debts
+      if (groups && groups.length > 0) {
+        const groupIds = groups.map(g => g.id);
+        
+        const [membersRes, groupExpensesRes, groupSettlementsRes] = await Promise.all([
+          supabase.from("group_members").select("group_id, user_id, users(full_name, upi_id)").in("group_id", groupIds),
+          supabase.from("group_expenses").select("group_id, paid_by, amount").in("group_id", groupIds),
+          supabase.from("group_settlements").select("group_id, paid_by, paid_to, amount").in("group_id", groupIds)
+        ]);
+
+        let globalOwe = 0;
+        let globalOwedToYou = 0;
+
+        const allMembers = membersRes.data || [];
+        const allExpenses = groupExpensesRes.data || [];
+        const allSettlements = groupSettlementsRes.data || [];
+
+        for (const groupId of groupIds) {
+          const gMembers: Member[] = allMembers
+            .filter(m => m.group_id === groupId)
+            .map(m => ({ id: m.user_id, name: (m.users as any).full_name, upiId: (m.users as any).upi_id }));
+            
+          const gExpenses: ExpenseInfo[] = allExpenses
+            .filter(e => e.group_id === groupId)
+            .map(e => ({ paidBy: e.paid_by, amount: e.amount }));
+
+          const gSettlements = allSettlements
+            .filter(s => s.group_id === groupId)
+            .map(s => ({ paidBy: s.paid_by, paidTo: s.paid_to, amount: s.amount }));
+
+          const transactions = calculateSettlements(gMembers, gExpenses, gSettlements);
+          
+          transactions.forEach(tx => {
+            if (tx.from === session.user.id) globalOwe += tx.amount;
+            if (tx.to === session.user.id) globalOwedToYou += tx.amount;
+          });
+        }
+
+        setYouOwe(globalOwe);
+        setOwedToYou(globalOwedToYou);
+      }
+
+      // Check for unread messages
+      const { data: userMemberships } = await supabase
+        .from("group_members")
+        .select("group_id, last_read_at")
+        .eq("user_id", session.user.id);
+        
+      if (userMemberships && userMemberships.length > 0) {
+        let hasUnread = false;
+        for (const membership of userMemberships) {
+           const { count } = await supabase
+             .from("group_messages")
+             .select("*", { count: 'exact', head: true })
+             .eq("group_id", membership.group_id)
+             .gt("created_at", membership.last_read_at);
+             
+           if (count && count > 0) {
+             hasUnread = true;
+             break;
+           }
+        }
+        setHasUnreadMessages(hasUnread);
+      }
+
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     } finally {
@@ -89,14 +169,46 @@ export default function Dashboard() {
     }
   };
 
+  const saveUpiId = async () => {
+    setSavingUpi(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      await supabase.from("users").update({ upi_id: upiId }).eq("id", session.user.id);
+    }
+    setSavingUpi(false);
+  };
+
   return (
     <div className="flex flex-col gap-8">
+      {/* Global Notification Banner */}
+      {youOwe > 0 && (
+        <div className="bg-[#A33D14]/10 border-l-4 border-[#A33D14] p-4 rounded-r-lg flex items-center justify-between shadow-sm animate-pulse">
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-[#A33D14]">notification_important</span>
+            <p className="text-[#A33D14] font-medium text-sm">
+              Ahoy! You have outstanding debts totaling <span className="font-bold font-mono">₹{youOwe.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> to settle.
+            </p>
+          </div>
+          <Link href="/dashboard/groups" className="text-xs font-bold text-[#A33D14] uppercase tracking-wider hover:underline">
+            Settle Up
+          </Link>
+        </div>
+      )}
+
       {/* Header & Weather Widget */}
       <section className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
-          <h2 className="text-[28px] leading-tight font-bold text-[#00668c] flex items-center gap-2">
-            Captain's Dashboard <span className="text-2xl">🏝️</span>
-          </h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-[28px] leading-tight font-bold text-[#00668c] flex items-center gap-2">
+              Captain's Dashboard <span className="text-2xl">🏝️</span>
+            </h2>
+            {hasUnreadMessages && (
+              <Link href="/dashboard/groups" className="relative flex items-center justify-center w-10 h-10 rounded-full bg-white border border-[#E8E0D5] shadow-sm hover:bg-[#F8F3ED] transition-colors group">
+                <span className="material-symbols-outlined text-[#00668c] group-hover:scale-110 transition-transform origin-top">notifications</span>
+                <span className="absolute top-2 right-2.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
+              </Link>
+            )}
+          </div>
           <p className="text-[#49454f] mt-1 text-sm">
             Welcome aboard. Here's your current ledger.
           </p>
@@ -111,6 +223,33 @@ export default function Dashboard() {
               {weather.desc} {weather.temp}
             </p>
           </div>
+        </div>
+      </section>
+
+      {/* UPI Settings Banner */}
+      <section className="bg-[#E2EFF6] border border-[#00668c]/20 p-4 rounded-xl shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3 text-[#00668c]">
+          <span className="material-symbols-outlined text-2xl">account_balance_wallet</span>
+          <div>
+            <h3 className="font-bold text-sm">Payment Settings</h3>
+            <p className="text-xs opacity-80">Add your UPI ID to receive payments automatically.</p>
+          </div>
+        </div>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <input 
+            type="text" 
+            placeholder="yourname@okbank" 
+            value={upiId}
+            onChange={(e) => setUpiId(e.target.value)}
+            className="flex-1 px-3 py-2 rounded-lg border border-[#00668c]/20 text-sm focus:outline-none focus:ring-2 focus:ring-[#00668c]"
+          />
+          <button 
+            onClick={saveUpiId}
+            disabled={savingUpi}
+            className="bg-[#00668c] text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-[#005575] transition-colors disabled:opacity-50 shrink-0"
+          >
+            {savingUpi ? "..." : "Save"}
+          </button>
         </div>
       </section>
 
@@ -159,7 +298,7 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-[11px] font-bold text-[#49454f] uppercase tracking-widest mb-1">You Owe</p>
-              <p className="text-3xl font-bold text-[#A33D14]">₹0.00</p>
+              <p className="text-3xl font-bold text-[#A33D14]">₹{youOwe.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
           </div>
         </div>
@@ -175,7 +314,7 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-[11px] font-bold text-[#49454f] uppercase tracking-widest mb-1">Owed to You</p>
-              <p className="text-3xl font-bold text-[#00668c]">₹0.00</p>
+              <p className="text-3xl font-bold text-[#00668c]">₹{owedToYou.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
           </div>
         </div>
