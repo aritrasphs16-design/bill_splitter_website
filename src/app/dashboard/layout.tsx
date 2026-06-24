@@ -58,7 +58,7 @@ export default function DashboardLayout({
         <div className="flex flex-col h-full py-8 pr-4">
           <div className="flex flex-col items-center mb-8 px-4">
             <div className="w-20 h-20 rounded-full border-4 border-[#E2EFF6] overflow-hidden mb-3 bg-white flex items-center justify-center shrink-0 shadow-sm relative">
-               <span className="material-symbols-outlined text-4xl text-primary">sailing</span>
+              <span className="material-symbols-outlined text-4xl text-primary">sailing</span>
             </div>
             <h2 className="font-title-md text-lg font-bold text-primary text-center">{firstName}'s Log</h2>
             <p className="font-caption text-xs text-on-surface-variant text-center mt-1 uppercase tracking-wider">Rank: Captain</p>
@@ -70,14 +70,13 @@ export default function DashboardLayout({
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className={`flex items-center gap-4 py-3 pl-8 pr-4 transition-all duration-200 ${
-                      isActive
+                    className={`flex items-center gap-4 py-3 pl-8 pr-4 transition-all duration-200 ${isActive
                         ? "text-primary font-bold border-l-[3px] border-primary bg-[#FFF9F2] rounded-r-full shadow-sm"
                         : "text-on-surface-variant hover:text-primary hover:bg-[#FFF9F2]/50 rounded-r-full border-l-[3px] border-transparent"
-                    }`}
+                      }`}
                   >
-                    <span 
-                      className="material-symbols-outlined" 
+                    <span
+                      className="material-symbols-outlined"
                       style={isActive ? { fontVariationSettings: "'FILL' 1" } : {}}
                     >
                       {link.icon}
@@ -88,8 +87,18 @@ export default function DashboardLayout({
               );
             })}
           </ul>
-          <div className="px-4 mt-auto">
-            <Link 
+          <div className="px-4 mt-auto flex flex-col gap-3">
+            <a
+              href="https://docs.google.com/forms/d/e/1FAIpQLSc29vVR4Jp_xGZsSkRMD4Ysbe_4SURA6BDFKpVdC5XU6HkaFg/viewform?usp=publish-editor"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 bg-[#E2EFF6] text-[#00668c] font-label-md text-[14px] py-2 px-4 rounded-lg shadow-sm hover:bg-[#D0E5F2] transition-all border border-[#00668c]/20"
+              title="Replace this link with your Google Form URL"
+            >
+              <span className="material-symbols-outlined text-[18px]">rate_review</span>
+              Give Feedback
+            </a>
+            <Link
               href="/dashboard/expenses"
               className="w-full flex items-center justify-center gap-2 bg-[#A33D14] text-white font-label-md text-[15px] py-3 px-4 rounded-lg shadow-sm hover:opacity-90 transition-all"
             >
@@ -116,7 +125,7 @@ export default function DashboardLayout({
       </main>
 
       {/* Fixed Logout Button (Desktop) */}
-      <button 
+      <button
         onClick={handleLogout}
         className="hidden md:flex fixed bottom-8 right-8 items-center justify-center gap-2 bg-white text-[#A33D14] font-label-md text-[15px] py-3 px-6 rounded-full shadow-md border border-[#E8E0D5] hover:bg-[#F5E6E0] transition-all z-50"
       >
@@ -132,13 +141,12 @@ export default function DashboardLayout({
             <Link
               key={link.name}
               href={link.href}
-              className={`flex flex-col items-center justify-center p-2 transition-all duration-150 ${
-                isActive
+              className={`flex flex-col items-center justify-center p-2 transition-all duration-150 ${isActive
                   ? "bg-secondary-container text-on-secondary-container rounded-full scale-90"
                   : "text-on-surface-variant hover:bg-secondary-container/50 rounded-lg"
-              }`}
+                }`}
             >
-              <span 
+              <span
                 className="material-symbols-outlined"
                 style={isActive ? { fontVariationSettings: "'FILL' 1" } : {}}
               >
