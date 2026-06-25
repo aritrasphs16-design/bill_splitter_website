@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { ArrowLeft, Trash2, UserPlus, Receipt, HandCoins, User, Users, Send } from "lucide-react";
 import Link from "next/link";
 import { calculateSettlements, Member, ExpenseInfo, Transaction, SettlementInfo } from "@/lib/settlement-algorithm";
+import { useMemo } from "react";
 
 type GroupDetails = {
   id: string;
@@ -18,7 +19,24 @@ type GroupDetails = {
 type GroupMemberRow = {
   id: string;
   user_id: string;
+  joined_at: string;
   users: { full_name: string, email: string };
+};
+
+type RawSettlement = {
+  id: string;
+  paid_by: string;
+  paid_to: string;
+  amount: number;
+  created_at: string;
+};
+
+type Activity = {
+  id: string;
+  type: "group_created" | "member_joined" | "expense_added" | "settlement";
+  timestamp: Date;
+  description: React.ReactNode;
+  icon: React.ReactNode;
 };
 
 type GroupExpenseRow = {
@@ -43,6 +61,8 @@ export default function GroupDetailPage() {
   const [expenses, setExpenses] = useState<GroupExpenseRow[]>([]);
   const [settlements, setSettlements] = useState<Transaction[]>([]);
   const [settlementsData, setSettlementsData] = useState<SettlementInfo[]>([]);
+  const [rawSettlements, setRawSettlements] = useState<RawSettlement[]>([]);
+  const [activeTab, setActiveTab] = useState<"overview" | "timeline">("overview");
 
   const [newMemberEmail, setNewMemberEmail] = useState("");
   const [expenseDesc, setExpenseDesc] = useState("");
@@ -107,9 +127,9 @@ export default function GroupDetailPage() {
     // Parallel fetch
     const [groupRes, membersRes, expensesRes, settlementsRes] = await Promise.all([
       supabase.from("shared_groups").select("id, name, created_at, created_by, creator:users!shared_groups_created_by_fkey(full_name)").eq("id", groupId).single(),
-      supabase.from("group_members").select("id, user_id, users(full_name, email, upi_id)").eq("group_id", groupId),
+      supabase.from("group_members").select("id, user_id, joined_at, users(full_name, email, upi_id)").eq("group_id", groupId),
       supabase.from("group_expenses").select("id, description, amount, paid_by, created_at, payer:users!group_expenses_paid_by_fkey(full_name)").eq("group_id", groupId).order("created_at", { ascending: false }),
-      supabase.from("group_settlements").select("id, paid_by, paid_to, amount").eq("group_id", groupId)
+      supabase.from("group_settlements").select("id, paid_by, paid_to, amount, created_at").eq("group_id", groupId)
     ]);
 
     if (groupRes.error) {
@@ -125,6 +145,7 @@ export default function GroupDetailPage() {
     const fetchedExpenses = (expensesRes.data || []) as unknown as GroupExpenseRow[];
     setExpenses(fetchedExpenses);
 
+    setRawSettlements(settlementsRes.data || []);
     const fetchedSettlements = (settlementsRes.data || []).map(s => ({ paidBy: s.paid_by, paidTo: s.paid_to, amount: s.amount }));
     setSettlementsData(fetchedSettlements);
 
@@ -139,6 +160,53 @@ export default function GroupDetailPage() {
     const algExps: ExpenseInfo[] = exps.map(e => ({ paidBy: e.paid_by, amount: e.amount }));
     setSettlements(calculateSettlements(algMembers, algExps, setts));
   };
+
+  const activities = useMemo(() => {
+    if (!group) return [];
+    const acts: Activity[] = [];
+
+    acts.push({
+      id: `group-created-${group.id}`,
+      type: "group_created",
+      timestamp: new Date(group.created_at),
+      description: <span><strong>{group.creator.full_name}</strong> created the group</span>,
+      icon: <Users size={16} />
+    });
+
+    members.forEach(m => {
+      acts.push({
+        id: `member-joined-${m.id}`,
+        type: "member_joined",
+        timestamp: new Date(m.joined_at),
+        description: <span><strong>{m.users.full_name}</strong> joined the group</span>,
+        icon: <UserPlus size={16} />
+      });
+    });
+
+    expenses.forEach(e => {
+      acts.push({
+        id: `expense-${e.id}`,
+        type: "expense_added",
+        timestamp: new Date(e.created_at),
+        description: <span><strong>{e.payer.full_name}</strong> added a <strong>₹{e.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong> expense for '{e.description}'</span>,
+        icon: <Receipt size={16} />
+      });
+    });
+
+    rawSettlements.forEach(s => {
+      const payer = members.find(m => m.user_id === s.paid_by)?.users.full_name || "Someone";
+      const payee = members.find(m => m.user_id === s.paid_to)?.users.full_name || "Someone";
+      acts.push({
+        id: `settlement-${s.id}`,
+        type: "settlement",
+        timestamp: new Date(s.created_at),
+        description: <span><strong>{payer}</strong> paid <strong>{payee}</strong> <strong>₹{s.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>,
+        icon: <HandCoins size={16} />
+      });
+    });
+
+    return acts.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  }, [group, members, expenses, rawSettlements]);
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -323,6 +391,48 @@ export default function GroupDetailPage() {
         </div>
       )}
 
+      {/* Tabs */}
+      <div className="flex gap-4 border-b border-[var(--color-outline-variant)] mb-4">
+        <button
+          onClick={() => setActiveTab("overview")}
+          className={`pb-3 px-2 text-lg font-heading font-semibold transition-colors border-b-4 ${activeTab === "overview" ? "border-[var(--color-primary)] text-[var(--color-primary)]" : "border-transparent text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)]"}`}
+        >
+          Overview
+        </button>
+        <button
+          onClick={() => setActiveTab("timeline")}
+          className={`pb-3 px-2 text-lg font-heading font-semibold transition-colors border-b-4 ${activeTab === "timeline" ? "border-[var(--color-primary)] text-[var(--color-primary)]" : "border-transparent text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)]"}`}
+        >
+          Timeline
+        </button>
+      </div>
+
+      {activeTab === "timeline" ? (
+        <div className="max-w-3xl mx-auto bg-[var(--color-surface-container-lowest)] p-6 md:p-8 rounded-2xl shadow-[var(--shadow-float)] border border-[var(--color-surface-container-highest)] mb-12">
+          <h2 className="text-xl font-heading font-semibold text-[var(--color-primary)] mb-8 flex items-center gap-2">
+            <span className="material-symbols-outlined">history</span> Activity Log
+          </h2>
+          <div className="relative border-l-2 border-[var(--color-outline-variant)] ml-4 space-y-8 pb-4">
+            {activities.length === 0 ? (
+              <p className="ml-6 text-[var(--color-on-surface-variant)]">No activity yet.</p>
+            ) : (
+              activities.map(act => (
+                <div key={act.id} className="relative ml-6 group">
+                  <span className="absolute -left-[35px] bg-white border-2 border-[var(--color-primary)] w-8 h-8 rounded-full flex items-center justify-center text-[var(--color-primary)] shadow-sm group-hover:scale-110 group-hover:bg-[#E2EFF6] transition-all">
+                    {act.icon}
+                  </span>
+                  <div className="bg-white border border-[var(--color-outline-variant)] p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                    <p className="text-[var(--color-on-surface)] mb-1 text-[15px]">{act.description}</p>
+                    <p className="text-xs text-[var(--color-on-surface-variant)] font-medium">
+                      {act.timestamp.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Left Column: Members & Add Member */}
@@ -560,6 +670,7 @@ export default function GroupDetailPage() {
 
         </div>
       </div>
+      )}
 
       {/* QR Code Modal */}
       {showQrModal && selectedTx && (
