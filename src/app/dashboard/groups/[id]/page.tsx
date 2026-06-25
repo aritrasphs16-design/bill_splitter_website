@@ -80,6 +80,7 @@ export default function GroupDetailPage() {
   const [submittingMember, setSubmittingMember] = useState(false);
   const [submittingExpense, setSubmittingExpense] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [nudging, setNudging] = useState<string | null>(null);
 
   useEffect(() => {
     fetchGroupData();
@@ -336,12 +337,65 @@ export default function GroupDetailPage() {
     if (!error) {
       setSuccess(`Successfully paid ₹${selectedTx.amount} to ${selectedTx.toName}`);
       setShowQrModal(false);
+      
+      // SEND EMAIL
+      const payee = members.find(m => m.user_id === selectedTx.to);
+      const payerName = members.find(m => m.user_id === selectedTx.from)?.users.full_name || "Someone";
+      if (payee) {
+        try {
+          await fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'payment_received',
+              recipientEmail: payee.users.email,
+              recipientName: payee.users.full_name,
+              senderName: payerName,
+              amount: selectedTx.amount,
+              groupName: group?.name || "the group"
+            })
+          });
+        } catch (e) {
+          console.error("Failed to send email", e);
+        }
+      }
+      
       setSelectedTx(null);
       fetchGroupData();
     } else {
       setError("Failed to mark as paid.");
     }
     setPaying(false);
+  };
+
+  const handleNudge = async (tx: Transaction) => {
+    setNudging(tx.from);
+    const debtor = members.find(m => m.user_id === tx.from);
+    if (!debtor) {
+      setNudging(null);
+      return;
+    }
+
+    try {
+      await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'nudge',
+          recipientEmail: debtor.users.email,
+          recipientName: debtor.users.full_name,
+          senderName: tx.toName,
+          amount: tx.amount,
+          groupName: group?.name || "the group"
+        })
+      });
+      setSuccess(`Nudge sent to ${debtor.users.full_name}!`);
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (e) {
+      console.error("Failed to send nudge", e);
+      setError("Failed to send nudge email.");
+    }
+    setNudging(null);
   };
 
   if (loading) {
@@ -505,6 +559,18 @@ export default function GroupDetailPage() {
                       >
                         <span className="material-symbols-outlined text-[12px]">qr_code_scanner</span>
                         Pay Now
+                      </button>
+                    )}
+
+                    {/* Nudge Button (if the current user is owed money) */}
+                    {tx.to === userId && (
+                      <button 
+                        onClick={() => handleNudge(tx)}
+                        disabled={nudging === tx.from}
+                        className="absolute -top-3 -right-3 text-[10px] uppercase tracking-wider font-bold bg-[#00668c] text-white px-3 py-1.5 rounded-full shadow-md hover:bg-[#005575] transition-colors z-20 flex items-center gap-1 border-2 border-white disabled:opacity-50"
+                      >
+                        <span className="material-symbols-outlined text-[12px]">notifications_active</span>
+                        {nudging === tx.from ? "Nudging..." : "Nudge"}
                       </button>
                     )}
                     

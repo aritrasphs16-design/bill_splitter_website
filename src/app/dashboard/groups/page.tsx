@@ -11,6 +11,7 @@ type Group = {
   created_by: string;
   group_members: { user_id: string }[];
   group_expenses: { amount: number; paid_by: string }[];
+  group_settlements: { amount: number; paid_by: string; paid_to: string }[];
 };
 
 export default function GroupsPage() {
@@ -39,7 +40,8 @@ export default function GroupsPage() {
           created_at, 
           created_by,
           group_members ( user_id ),
-          group_expenses ( amount, paid_by )
+          group_expenses ( amount, paid_by ),
+          group_settlements ( amount, paid_by, paid_to )
         `)
         .order("created_at", { ascending: false });
 
@@ -182,7 +184,11 @@ export default function GroupsPage() {
              const userPaid = group.group_expenses
                 .filter(exp => exp.paid_by === userId)
                 .reduce((sum, exp) => sum + Number(exp.amount), 0);
-             balance = userPaid - userShare;
+                
+             const settlementsPaid = group.group_settlements?.filter(s => s.paid_by === userId).reduce((sum, s) => sum + Number(s.amount), 0) || 0;
+             const settlementsReceived = group.group_settlements?.filter(s => s.paid_to === userId).reduce((sum, s) => sum + Number(s.amount), 0) || 0;
+             
+             balance = (userPaid + settlementsPaid) - (userShare + settlementsReceived);
           }
 
           let borderClass, bgIconClass, badgeClass, badgeIcon, badgeText, balanceColor, balanceText;
