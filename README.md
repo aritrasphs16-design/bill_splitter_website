@@ -8,7 +8,11 @@ CruiseSplit is a modern, responsive web application designed to take the headach
 *   **Personal Manifest**: Log and categorize your personal daily expenses (Food, Drinks, Activities, Shopping).
 *   **Shared Fleets (Groups)**: Create trips and invite crew members.
 *   **Smart Settlements**: Add shared group expenses and let the app calculate the net balances. The algorithm ensures everyone gets squared away with the minimum number of transactions possible!
+*   **100% Financial Transparency (Audit Trail)**: A detailed, chronological Timeline logs every action in the group—from members joining to expenses added and debts settled.
+*   **Settle Up with UPI**: Easily pay your friends using automatically generated UPI QR codes straight from the app!
+*   **Live Discussions**: Built-in real-time group chat so you can discuss expenses and coordinate plans seamlessly.
 *   **Authentication**: Secure signup and login powered by Supabase.
+*   **Live Weather & Clock Widget**: A nifty dashboard addition that grabs the current weather for your location and displays the real-time local clock.
 
 ## 🛠️ Technology Stack
 
