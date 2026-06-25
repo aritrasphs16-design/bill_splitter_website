@@ -19,10 +19,14 @@ export default function Dashboard() {
   const [savingUpi, setSavingUpi] = useState(false);
 
   const [weather, setWeather] = useState({ temp: "--°C", desc: "Loading...", icon: "☀️" });
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
 
   useEffect(() => {
     fetchDashboardData();
     fetchWeather();
+    setCurrentTime(new Date());
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
   }, []);
 
   const fetchWeather = () => {
@@ -222,6 +226,11 @@ export default function Dashboard() {
             <p className="text-[15px] text-[#00668c] font-bold">
               {weather.desc} {weather.temp}
             </p>
+            {currentTime && (
+              <p className="text-[12px] text-[#A33D14] font-bold mt-0.5">
+                {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </p>
+            )}
           </div>
         </div>
       </section>
