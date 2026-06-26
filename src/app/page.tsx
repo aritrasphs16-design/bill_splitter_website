@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import LandingPageTour from "@/components/LandingPageTour";
-import { Anchor, Ship, PieChart, Users, Receipt, ArrowRight, Wallet, CheckCircle2 } from "lucide-react";
+import TestingGuideModal from "@/components/TestingGuideModal";
+import { Anchor, Ship, PieChart, Users, Receipt, ArrowRight, Wallet, CheckCircle2, FlaskConical } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Home() {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [isTestingGuideOpen, setIsTestingGuideOpen] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -115,12 +117,14 @@ export default function Home() {
                 <Ship className="w-5 h-5" />
                 Start your voyage
               </Link>
-              <a 
-                href="#tour-features" 
-                className="bg-[var(--color-surface-container)] text-[var(--color-on-surface)] border border-[var(--color-outline-variant)] px-8 py-4 rounded-full font-title-md text-lg hover:bg-[var(--color-surface-container-high)] transition-all flex items-center justify-center w-full sm:w-auto"
+              <button 
+                onClick={() => setIsTestingGuideOpen(true)}
+                className="bg-white/80 backdrop-blur-md text-[#00668c] border-2 border-[#00668c] px-8 py-4 rounded-full font-title-md text-lg shadow-[0_0_15px_rgba(0,102,140,0.3)] hover:shadow-[0_0_25px_rgba(0,102,140,0.5)] hover:-translate-y-1 transition-all flex items-center justify-center gap-2 w-full sm:w-auto group relative overflow-hidden"
               >
-                See how it works
-              </a>
+                <div className="absolute inset-0 bg-[#00668c] translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+                <FlaskConical className="w-5 h-5 relative z-10 group-hover:text-white transition-colors duration-300" />
+                <span className="relative z-10 group-hover:text-white transition-colors duration-300">How to Test</span>
+              </button>
             </motion.div>
           </motion.div>
         </section>
@@ -287,6 +291,9 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Modals */}
+      <TestingGuideModal isOpen={isTestingGuideOpen} onClose={() => setIsTestingGuideOpen(false)} />
 
     </div>
   );
