@@ -10,7 +10,7 @@ type Group = {
   created_at: string;
   created_by: string;
   group_members: { user_id: string }[];
-  group_expenses: { amount: number; paid_by: string }[];
+  group_expenses: { amount: number; paid_by: string; splits?: { user_id: string, amount: number }[] | null }[];
   group_settlements: { amount: number; paid_by: string; paid_to: string }[];
 };
 
@@ -40,7 +40,7 @@ export default function GroupsPage() {
           created_at, 
           created_by,
           group_members ( user_id ),
-          group_expenses ( amount, paid_by ),
+          group_expenses ( amount, paid_by, splits ),
           group_settlements ( amount, paid_by, paid_to )
         `)
         .order("created_at", { ascending: false });
@@ -179,8 +179,18 @@ export default function GroupsPage() {
           let balance = 0;
           const memberCount = group.group_members?.length || 1;
           if (memberCount > 0 && group.group_expenses) {
-             const totalExpenses = group.group_expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
-             const userShare = totalExpenses / memberCount;
+             let userShare = 0;
+             group.group_expenses.forEach(exp => {
+                if (exp.splits && exp.splits.length > 0) {
+                   const split = exp.splits.find((s: any) => s.user_id === userId);
+                   if (split) {
+                       userShare += Number(split.amount);
+                   }
+                } else {
+                   userShare += Number(exp.amount) / memberCount;
+                }
+             });
+             
              const userPaid = group.group_expenses
                 .filter(exp => exp.paid_by === userId)
                 .reduce((sum, exp) => sum + Number(exp.amount), 0);

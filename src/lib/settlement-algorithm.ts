@@ -13,9 +13,15 @@ export type Member = {
   upiId?: string;
 };
 
+export type CustomSplit = {
+  user_id: string;
+  amount: number;
+};
+
 export type ExpenseInfo = {
   paidBy: string;
   amount: number;
+  splits?: CustomSplit[] | null;
 };
 
 export type SettlementInfo = {
@@ -36,18 +42,27 @@ export function calculateSettlements(members: Member[], expenses: ExpenseInfo[],
   });
 
   // Add what each person paid for group expenses
+  // and subtract what each person owes
   expenses.forEach(e => {
+    // Add what the person paid
     if (balances[e.paidBy] !== undefined) {
       balances[e.paidBy] += e.amount;
     }
-  });
 
-  // Subtract what each person owes (equal split)
-  const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
-  const sharePerPerson = totalSpent / members.length;
-
-  members.forEach(m => {
-    balances[m.id] -= sharePerPerson;
+    if (e.splits && e.splits.length > 0) {
+      // Custom splits
+      e.splits.forEach(split => {
+        if (balances[split.user_id] !== undefined) {
+          balances[split.user_id] -= split.amount;
+        }
+      });
+    } else {
+      // Equal split
+      const sharePerPerson = e.amount / members.length;
+      members.forEach(m => {
+        balances[m.id] -= sharePerPerson;
+      });
+    }
   });
 
   // Apply manual direct settlements (A pays B)

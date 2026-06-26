@@ -1,7 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
+
+const CATEGORY_COLORS: Record<string, string> = {
+  "food": "#f59e0b",
+  "drinks": "#3b82f6",
+  "activities": "#10b981",
+  "shopping": "#8b5cf6"
+};
 
 type Expense = {
   id: string;
@@ -22,9 +30,25 @@ export default function ExpensesPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // New Features State
+  const [timeFilter, setTimeFilter] = useState<"all" | "month" | "week">("all");
+  const [budget, setBudget] = useState(15000); // Setting a default budget of ₹15,000
+  const [isEditingBudget, setIsEditingBudget] = useState(false);
+
   useEffect(() => {
     fetchExpenses();
+    
+    // Load saved budget
+    const savedBudget = localStorage.getItem("personal_budget");
+    if (savedBudget) {
+      setBudget(Number(savedBudget));
+    }
   }, []);
+
+  const handleSaveBudget = () => {
+    localStorage.setItem("personal_budget", budget.toString());
+    setIsEditingBudget(false);
+  };
 
   const fetchExpenses = async () => {
     try {
@@ -102,6 +126,34 @@ export default function ExpensesPage() {
     { value: "shopping", icon: "local_mall", label: "Shopping" },
   ];
 
+  const filteredExpenses = useMemo(() => {
+    const now = new Date();
+    return expenses.filter(exp => {
+      const expDate = new Date(exp.created_at);
+      if (timeFilter === "month") {
+        return expDate.getMonth() === now.getMonth() && expDate.getFullYear() === now.getFullYear();
+      }
+      if (timeFilter === "week") {
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(now.getDate() - 7);
+        return expDate >= oneWeekAgo;
+      }
+      return true;
+    });
+  }, [expenses, timeFilter]);
+
+  const totalSpent = useMemo(() => filteredExpenses.reduce((sum, e) => sum + Number(e.amount), 0), [filteredExpenses]);
+
+  const categoryData = useMemo(() => {
+    const data: Record<string, number> = {};
+    filteredExpenses.forEach(e => {
+      const cat = e.category || "other";
+      if (!data[cat]) data[cat] = 0;
+      data[cat] += Number(e.amount);
+    });
+    return Object.keys(data).map(key => ({ name: key, value: data[key] })).sort((a, b) => b.value - a.value);
+  }, [filteredExpenses]);
+
   return (
     <div className="w-full">
       <div className="mb-section-margin">
@@ -114,6 +166,96 @@ export default function ExpensesPage() {
           {error}
         </div>
       )}
+
+      {/* Dashboard Top Section (Budget & Analytics) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-section-margin">
+        
+        {/* Budget Progress & Summary */}
+        <div className="lg:col-span-1 flex flex-col gap-6">
+          <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-buoyant border border-surface-variant flex flex-col justify-center h-full">
+            <div className="flex justify-between items-end mb-4">
+              <div>
+                <p className="text-on-surface-variant font-label-md uppercase tracking-wider">Total Spent ({timeFilter})</p>
+                <h2 className="text-3xl font-display-sm text-primary">₹{totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
+              </div>
+              <div className="text-right">
+                <p className="text-on-surface-variant font-label-md uppercase tracking-wider mb-1">Budget</p>
+                {isEditingBudget ? (
+                  <div className="flex items-center justify-end gap-2">
+                    <span className="font-semibold text-secondary">₹</span>
+                    <input 
+                      type="number" 
+                      value={budget} 
+                      onChange={(e) => setBudget(Number(e.target.value))}
+                      className="w-24 px-2 py-1 bg-[var(--color-surface-container-high)] text-[var(--color-on-surface)] rounded border-none outline-none font-semibold text-right"
+                      autoFocus
+                      onBlur={handleSaveBudget}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSaveBudget()}
+                    />
+                    <button onClick={handleSaveBudget} className="text-[var(--color-primary)] hover:opacity-80">
+                      <span className="material-symbols-outlined text-[20px]">check_circle</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-end gap-2 group cursor-pointer" onClick={() => setIsEditingBudget(true)}>
+                    <p className="font-semibold text-secondary">₹{budget.toLocaleString()}</p>
+                    <span className="material-symbols-outlined text-[16px] text-[var(--color-outline-variant)] group-hover:text-[var(--color-primary)] transition-colors">edit</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="w-full bg-surface-container-high rounded-full h-4 overflow-hidden mb-2 shadow-inner">
+              <div 
+                className={`h-full rounded-full transition-all duration-1000 ${
+                  totalSpent > budget ? 'bg-error' : totalSpent > budget * 0.8 ? 'bg-tertiary' : 'bg-primary'
+                }`}
+                style={{ width: `${Math.min((totalSpent / budget) * 100, 100)}%` }}
+              ></div>
+            </div>
+            <p className="text-sm font-medium text-right text-on-surface-variant">
+              {totalSpent > budget 
+                ? <span className="text-error font-bold flex justify-end items-center gap-1"><span className="material-symbols-outlined text-[16px]">warning</span> Over budget by ₹{(totalSpent - budget).toLocaleString()}</span>
+                : `${((totalSpent / budget) * 100).toFixed(1)}% of budget used`
+              }
+            </p>
+          </div>
+        </div>
+
+        {/* Donut Chart */}
+        <div className="lg:col-span-2 bg-surface-container-lowest p-6 rounded-2xl shadow-buoyant border border-surface-variant h-[280px] flex items-center justify-center">
+          {filteredExpenses.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={categoryData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={75}
+                  outerRadius={105}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {categoryData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[entry.name] || "#64748b"} />
+                  ))}
+                </Pie>
+                <RechartsTooltip 
+                  formatter={(value: number) => `₹${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Legend verticalAlign="middle" align="right" layout="vertical" iconType="circle" wrapperStyle={{ paddingLeft: '20px' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="text-center text-on-surface-variant flex flex-col items-center">
+              <span className="material-symbols-outlined text-5xl mb-3 opacity-30">pie_chart</span>
+              <p className="font-body-lg">No data for this period</p>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Add New Expense Form (Bento/Glassmorphism Card) */}
       <section className="bg-surface-container-lowest rounded-xl p-6 shadow-buoyant border border-surface-variant/50 mb-section-margin relative overflow-hidden">
@@ -215,22 +357,44 @@ export default function ExpensesPage() {
 
       {/* Expense Log (Cards Grid) */}
       <section>
-        <div className="flex justify-between items-end mb-6">
-          <h3 className="font-title-md text-title-md text-primary">Recent Manifest</h3>
-          <button className="font-label-md text-label-md text-secondary hover:text-primary transition-colors">View All</button>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
+          <h3 className="font-title-md text-title-md text-primary flex items-center gap-2">
+            <span className="material-symbols-outlined">receipt_long</span>
+            Recent Manifest
+          </h3>
+          <div className="flex bg-surface-container rounded-lg p-1 border border-surface-variant shadow-sm w-full md:w-auto overflow-x-auto hide-scrollbar">
+            <button 
+              onClick={() => setTimeFilter("all")} 
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${timeFilter === "all" ? "bg-primary text-on-primary shadow" : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest"}`}
+            >
+              All Time
+            </button>
+            <button 
+              onClick={() => setTimeFilter("month")} 
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${timeFilter === "month" ? "bg-primary text-on-primary shadow" : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest"}`}
+            >
+              This Month
+            </button>
+            <button 
+              onClick={() => setTimeFilter("week")} 
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${timeFilter === "week" ? "bg-primary text-on-primary shadow" : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest"}`}
+            >
+              This Week
+            </button>
+          </div>
         </div>
         
         {loading ? (
            <div className="flex justify-center p-8">
              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
            </div>
-        ) : expenses.length === 0 ? (
+        ) : filteredExpenses.length === 0 ? (
           <div className="bg-surface-container bg-opacity-50 p-8 rounded-xl text-center border border-surface-variant">
-            <p className="font-body-lg text-body-lg text-on-surface-variant">No expenses logged yet. Start adding to your manifest!</p>
+            <p className="font-body-lg text-body-lg text-on-surface-variant">No expenses logged in this timeframe. Start adding to your manifest!</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-card-gap">
-            {expenses.map((expense) => {
+            {filteredExpenses.map((expense) => {
               // Styling based on category
               let iconClass = "", bgClass = "", dotClass = "", iconName = "";
               if (expense.category === "food") {

@@ -7,6 +7,26 @@ import { ArrowLeft, Trash2, UserPlus, Receipt, HandCoins, User, Users, Send } fr
 import Link from "next/link";
 import { calculateSettlements, Member, ExpenseInfo, Transaction, SettlementInfo } from "@/lib/settlement-algorithm";
 import { useMemo } from "react";
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
+
+const CATEGORIES = ["Food", "Transport", "Hotel", "Activities", "Other"];
+const CATEGORY_COLORS: Record<string, string> = {
+  "Food": "#f59e0b", // Amber
+  "Transport": "#3b82f6", // Blue
+  "Hotel": "#8b5cf6", // Purple
+  "Activities": "#10b981", // Emerald
+  "Other": "#64748b" // Slate
+};
+
+const CURRENCIES: Record<string, string> = {
+  "INR": "₹",
+  "USD": "$",
+  "EUR": "€",
+  "GBP": "£",
+  "AUD": "A$",
+  "CAD": "C$",
+  "JPY": "¥"
+};
 
 type GroupDetails = {
   id: string;
@@ -45,7 +65,12 @@ type GroupExpenseRow = {
   amount: number;
   paid_by: string;
   created_at: string;
+  category: string;
   payer: { full_name: string };
+  splits?: { user_id: string, amount: number }[] | null;
+  original_amount?: number | null;
+  currency?: string | null;
+  exchange_rate?: number | null;
 };
 
 export default function GroupDetailPage() {
@@ -62,11 +87,15 @@ export default function GroupDetailPage() {
   const [settlements, setSettlements] = useState<Transaction[]>([]);
   const [settlementsData, setSettlementsData] = useState<SettlementInfo[]>([]);
   const [rawSettlements, setRawSettlements] = useState<RawSettlement[]>([]);
-  const [activeTab, setActiveTab] = useState<"overview" | "timeline">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "timeline" | "analytics">("overview");
 
   const [newMemberEmail, setNewMemberEmail] = useState("");
   const [expenseDesc, setExpenseDesc] = useState("");
   const [expenseAmt, setExpenseAmt] = useState("");
+  const [expenseCategory, setExpenseCategory] = useState("Other");
+  const [expenseCurrency, setExpenseCurrency] = useState("INR");
+  const [splitType, setSplitType] = useState<"EQUAL" | "EXACT" | "PERCENTAGE">("EQUAL");
+  const [customSplits, setCustomSplits] = useState<Record<string, number>>({});
 
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -129,7 +158,7 @@ export default function GroupDetailPage() {
     const [groupRes, membersRes, expensesRes, settlementsRes] = await Promise.all([
       supabase.from("shared_groups").select("id, name, created_at, created_by, creator:users!shared_groups_created_by_fkey(full_name)").eq("id", groupId).single(),
       supabase.from("group_members").select("id, user_id, joined_at, users(full_name, email, upi_id)").eq("group_id", groupId),
-      supabase.from("group_expenses").select("id, description, amount, paid_by, created_at, payer:users!group_expenses_paid_by_fkey(full_name)").eq("group_id", groupId).order("created_at", { ascending: false }),
+      supabase.from("group_expenses").select("id, description, amount, paid_by, created_at, category, splits, original_amount, currency, exchange_rate, payer:users!group_expenses_paid_by_fkey(full_name)").eq("group_id", groupId).order("created_at", { ascending: false }),
       supabase.from("group_settlements").select("id, paid_by, paid_to, amount, created_at").eq("group_id", groupId)
     ]);
 
@@ -158,7 +187,7 @@ export default function GroupDetailPage() {
 
   const updateSettlements = (mems: GroupMemberRow[], exps: GroupExpenseRow[], setts: SettlementInfo[]) => {
     const algMembers: Member[] = mems.map(m => ({ id: m.user_id, name: m.users.full_name, upiId: (m.users as any).upi_id }));
-    const algExps: ExpenseInfo[] = exps.map(e => ({ paidBy: e.paid_by, amount: e.amount }));
+    const algExps: ExpenseInfo[] = exps.map(e => ({ paidBy: e.paid_by, amount: e.amount, splits: e.splits }));
     setSettlements(calculateSettlements(algMembers, algExps, setts));
   };
 
@@ -185,11 +214,20 @@ export default function GroupDetailPage() {
     });
 
     expenses.forEach(e => {
+      const baseAmountStr = `₹${e.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      let amountDisplay = baseAmountStr;
+      
+      if (e.currency && e.currency !== 'INR' && e.original_amount) {
+        const symbol = CURRENCIES[e.currency] || e.currency;
+        const originalStr = `${symbol}${e.original_amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        amountDisplay = `${originalStr} (${baseAmountStr})`;
+      }
+
       acts.push({
         id: `expense-${e.id}`,
         type: "expense_added",
         timestamp: new Date(e.created_at),
-        description: <span><strong>{e.payer.full_name}</strong> added a <strong>₹{e.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong> expense for '{e.description}'</span>,
+        description: <span><strong>{e.payer.full_name}</strong> added a <strong>{amountDisplay}</strong> expense for '{e.description}'</span>,
         icon: <Receipt size={16} />
       });
     });
@@ -208,6 +246,16 @@ export default function GroupDetailPage() {
 
     return acts.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }, [group, members, expenses, rawSettlements]);
+
+  const categoryData = useMemo(() => {
+    const data: Record<string, number> = {};
+    expenses.forEach(e => {
+      const cat = e.category || "Other";
+      if (!data[cat]) data[cat] = 0;
+      data[cat] += e.amount;
+    });
+    return Object.keys(data).map(key => ({ name: key, value: data[key] })).sort((a, b) => b.value - a.value);
+  }, [expenses]);
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -272,11 +320,61 @@ export default function GroupDetailPage() {
       return;
     }
 
+    let rate = 1;
+    if (expenseCurrency !== "INR") {
+      try {
+        const res = await fetch(`https://api.frankfurter.app/latest?from=${expenseCurrency}&to=INR`);
+        if (!res.ok) throw new Error("Failed to fetch exchange rate");
+        const data = await res.json();
+        rate = data.rates["INR"];
+      } catch (err) {
+        console.error(err);
+        setError(`Failed to get live exchange rate for ${expenseCurrency}. Please try again later.`);
+        setSubmittingExpense(false);
+        return;
+      }
+    }
+
+    const baseAmount = amt * rate; // Convert to INR
+
+    let splitsData = null;
+    if (splitType === "EXACT") {
+      let totalSplit = 0;
+      splitsData = members.map(m => {
+        const val = customSplits[m.user_id] || 0;
+        totalSplit += val;
+        return { user_id: m.user_id, amount: val * rate }; // Store in INR
+      });
+      if (Math.abs(totalSplit - amt) > 0.01) {
+        const sym = CURRENCIES[expenseCurrency] || expenseCurrency;
+        setError(`Exact amounts must sum up to ${sym}${amt}. Currently: ${sym}${totalSplit}`);
+        setSubmittingExpense(false);
+        return;
+      }
+    } else if (splitType === "PERCENTAGE") {
+      let totalPercent = 0;
+      splitsData = members.map(m => {
+        const val = customSplits[m.user_id] || 0;
+        totalPercent += val;
+        return { user_id: m.user_id, amount: (val / 100) * baseAmount }; // Store in INR
+      });
+      if (Math.abs(totalPercent - 100) > 0.01) {
+        setError(`Percentages must sum up to 100%. Currently: ${totalPercent}%`);
+        setSubmittingExpense(false);
+        return;
+      }
+    }
+
     const { error: expError } = await supabase.from("group_expenses").insert([{
       group_id: groupId,
       paid_by: userId,
       description: expenseDesc.trim(),
-      amount: amt
+      amount: baseAmount,
+      category: expenseCategory,
+      splits: splitsData,
+      original_amount: expenseCurrency !== "INR" ? amt : null,
+      currency: expenseCurrency,
+      exchange_rate: rate
     }]);
 
     if (expError) {
@@ -285,6 +383,10 @@ export default function GroupDetailPage() {
       setSuccess("Group expense added successfully!");
       setExpenseDesc("");
       setExpenseAmt("");
+      setExpenseCategory("Other");
+      setExpenseCurrency("INR");
+      setCustomSplits({});
+      setSplitType("EQUAL");
       fetchGroupData(); // Refresh
       setTimeout(() => setSuccess(""), 5000);
     }
@@ -459,9 +561,72 @@ export default function GroupDetailPage() {
         >
           Timeline
         </button>
+        <button
+          onClick={() => setActiveTab("analytics")}
+          className={`pb-3 px-2 text-lg font-heading font-semibold transition-colors border-b-4 ${activeTab === "analytics" ? "border-[var(--color-primary)] text-[var(--color-primary)]" : "border-transparent text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)]"}`}
+        >
+          Analytics
+        </button>
       </div>
 
-      {activeTab === "timeline" ? (
+      {activeTab === "analytics" ? (
+        <div className="max-w-4xl mx-auto space-y-8 mb-12">
+          {expenses.length === 0 ? (
+            <div className="bg-[var(--color-surface-container-lowest)] p-12 rounded-2xl shadow-[var(--shadow-float)] border border-[var(--color-surface-container-highest)] text-center">
+              <span className="material-symbols-outlined text-5xl text-[var(--color-on-surface-variant)] mb-4 block">monitoring</span>
+              <h2 className="text-xl font-heading font-semibold text-[var(--color-on-surface)] mb-2">No Data Yet</h2>
+              <p className="text-[var(--color-on-surface-variant)]">Add some group expenses to see your spending analytics.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-[var(--color-surface-container-lowest)] p-6 md:p-8 rounded-2xl shadow-[var(--shadow-float)] border border-[var(--color-surface-container-highest)]">
+                <h2 className="text-xl font-heading font-semibold text-[var(--color-primary)] mb-6 flex items-center gap-2">
+                  <span className="material-symbols-outlined">pie_chart</span> Spending by Category
+                </h2>
+                <div className="h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={categoryData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={80}
+                        outerRadius={110}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {categoryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[entry.name] || CATEGORY_COLORS["Other"]} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip 
+                        formatter={(value: number) => `₹${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      />
+                      <Legend verticalAlign="bottom" height={36} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h2 className="text-xl font-heading font-semibold text-[var(--color-primary)] mb-6 ml-2">Category Breakdown</h2>
+                {categoryData.map((cat, idx) => (
+                  <div key={idx} className="bg-[var(--color-surface-container-lowest)] p-4 rounded-xl shadow-sm border border-[var(--color-outline-variant)] flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[cat.name] || CATEGORY_COLORS["Other"] }}></div>
+                      <span className="font-medium text-[var(--color-on-surface)]">{cat.name}</span>
+                    </div>
+                    <span className="font-mono font-bold text-[var(--color-primary)]">
+                      ₹{cat.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : activeTab === "timeline" ? (
         <div className="max-w-3xl mx-auto bg-[var(--color-surface-container-lowest)] p-6 md:p-8 rounded-2xl shadow-[var(--shadow-float)] border border-[var(--color-surface-container-highest)] mb-12">
           <h2 className="text-xl font-heading font-semibold text-[var(--color-primary)] mb-8 flex items-center gap-2">
             <span className="material-symbols-outlined">history</span> Activity Log
@@ -544,7 +709,7 @@ export default function GroupDetailPage() {
             ) : (
               <div className="space-y-4">
                 {settlements.map((tx, idx) => (
-                  <div key={idx} className="relative flex items-center justify-between p-4 bg-white border border-[var(--color-outline-variant)] rounded-xl overflow-hidden shadow-sm group hover:border-[#A33D14] transition-all">
+                  <div key={idx} className="relative flex items-center justify-between p-4 bg-white border border-[var(--color-outline-variant)] rounded-xl shadow-sm group hover:border-[#A33D14] transition-all">
                     {/* Animated background line */}
                     <div className="absolute inset-0 w-full h-full pointer-events-none">
                       <div className="absolute top-1/2 left-12 right-12 h-0.5 bg-gradient-to-r from-transparent via-[#00668c] to-transparent opacity-20 -translate-y-1/2"></div>
@@ -606,34 +771,115 @@ export default function GroupDetailPage() {
           
           <div className="bg-[var(--color-surface-container-lowest)] p-6 md:p-8 rounded-xl shadow-[var(--shadow-float)] border border-[var(--color-surface-container-highest)]">
             <h2 className="text-xl font-heading font-semibold text-[var(--color-primary)] mb-6">Add Group Expense</h2>
-            <form onSubmit={handleAddExpense} className="flex flex-col sm:flex-row gap-4 items-end">
-              <div className="flex-1 w-full">
-                <label className="block text-sm font-medium text-[var(--color-on-surface)] mb-1">Description</label>
-                <input
-                  type="text"
-                  placeholder="e.g., Hotel booking"
-                  value={expenseDesc}
-                  onChange={(e) => setExpenseDesc(e.target.value)}
-                  className="w-full px-4 py-2 bg-[var(--color-surface-container-lowest)] border-b-2 border-[var(--color-outline-variant)] text-[var(--color-on-surface)] focus:border-[var(--color-secondary)] focus:outline-none transition-colors"
-                />
+            <form onSubmit={handleAddExpense} className="flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 items-end">
+                <div className="flex-1 w-full">
+                  <label className="block text-sm font-medium text-[var(--color-on-surface)] mb-1">Description</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Hotel booking"
+                    value={expenseDesc}
+                    onChange={(e) => setExpenseDesc(e.target.value)}
+                    className="w-full px-4 py-2 bg-[var(--color-surface-container-lowest)] border-b-2 border-[var(--color-outline-variant)] text-[var(--color-on-surface)] focus:border-[var(--color-secondary)] focus:outline-none transition-colors"
+                  />
+                </div>
+                <div className="w-full sm:w-1/4">
+                  <label className="block text-sm font-medium text-[var(--color-on-surface)] mb-1">Currency</label>
+                  <select
+                    value={expenseCurrency}
+                    onChange={(e) => setExpenseCurrency(e.target.value)}
+                    className="w-full px-4 py-2 bg-[var(--color-surface-container-lowest)] border-b-2 border-[var(--color-outline-variant)] text-[var(--color-on-surface)] focus:border-[var(--color-secondary)] focus:outline-none transition-colors appearance-none"
+                    style={{ backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.5rem center', backgroundSize: '1em' }}
+                  >
+                    {Object.keys(CURRENCIES).map(c => (
+                      <option key={c} value={c}>{c} ({CURRENCIES[c]})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="w-full sm:w-1/4">
+                  <label className="block text-sm font-medium text-[var(--color-on-surface)] mb-1">Amount</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={expenseAmt}
+                    onChange={(e) => setExpenseAmt(e.target.value)}
+                    className="w-full px-4 py-2 bg-[var(--color-surface-container-lowest)] border-b-2 border-[var(--color-outline-variant)] text-[var(--color-on-surface)] focus:border-[var(--color-secondary)] focus:outline-none transition-colors font-mono"
+                  />
+                </div>
               </div>
-              <div className="w-full sm:w-1/3">
-                <label className="block text-sm font-medium text-[var(--color-on-surface)] mb-1">Amount (₹)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={expenseAmt}
-                  onChange={(e) => setExpenseAmt(e.target.value)}
-                  className="w-full px-4 py-2 bg-[var(--color-surface-container-lowest)] border-b-2 border-[var(--color-outline-variant)] text-[var(--color-on-surface)] focus:border-[var(--color-secondary)] focus:outline-none transition-colors font-mono"
-                />
+
+              {/* Second Row: Category and Notice */}
+              <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mt-2">
+                <div className="w-full sm:w-1/2">
+                  <label className="block text-sm font-medium text-[var(--color-on-surface)] mb-1">Category</label>
+                  <select
+                    value={expenseCategory}
+                    onChange={(e) => setExpenseCategory(e.target.value)}
+                    className="w-full px-4 py-2 bg-[var(--color-surface-container-lowest)] border-b-2 border-[var(--color-outline-variant)] text-[var(--color-on-surface)] focus:border-[var(--color-secondary)] focus:outline-none transition-colors appearance-none"
+                    style={{ backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.5rem center', backgroundSize: '1em' }}
+                  >
+                    {CATEGORIES.map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+                {expenseCurrency !== 'INR' && (
+                  <div className="w-full sm:w-1/2 text-xs font-medium text-[#A33D14] bg-[#F5E6E0] p-3 rounded flex items-center gap-2 border border-[#A33D14]/30 shadow-sm animate-pulse-slow">
+                    <span className="material-symbols-outlined text-[16px]">info</span>
+                    Live {expenseCurrency} to INR exchange rate will be applied instantly.
+                  </div>
+                )}
               </div>
-              <div className="w-full sm:w-auto">
+
+              <div className="w-full mt-4">
+                <label className="block text-sm font-medium text-[var(--color-on-surface)] mb-2">Split Type</label>
+                <div className="flex gap-6">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)] transition-colors">
+                    <input type="radio" name="splitType" checked={splitType === "EQUAL"} onChange={() => setSplitType("EQUAL")} className="accent-[var(--color-primary)] w-4 h-4" />
+                    <span>Equally</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)] transition-colors">
+                    <input type="radio" name="splitType" checked={splitType === "EXACT"} onChange={() => setSplitType("EXACT")} className="accent-[var(--color-primary)] w-4 h-4" />
+                    <span>Exact Amounts</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)] transition-colors">
+                    <input type="radio" name="splitType" checked={splitType === "PERCENTAGE"} onChange={() => setSplitType("PERCENTAGE")} className="accent-[var(--color-primary)] w-4 h-4" />
+                    <span>Percentages</span>
+                  </label>
+                </div>
+              </div>
+
+              {splitType !== "EQUAL" && (
+                <div className="w-full mt-2 p-4 bg-[var(--color-surface-container-low)] rounded-lg border border-[var(--color-outline-variant)] space-y-3">
+                  <label className="block text-sm font-medium text-[var(--color-on-surface)] mb-2">
+                    Enter {splitType === "EXACT" ? `Amounts (${CURRENCIES[expenseCurrency] || expenseCurrency})` : "Percentages (%)"} per member
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {members.map(m => (
+                      <div key={m.id} className="flex items-center justify-between gap-4 bg-white p-2 px-3 rounded shadow-sm border border-[var(--color-outline-variant)]">
+                        <span className="text-sm font-medium text-[var(--color-on-surface)] truncate">{m.users.full_name}</span>
+                        <input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="0"
+                          value={customSplits[m.user_id] === undefined ? "" : customSplits[m.user_id]}
+                          onChange={(e) => setCustomSplits(prev => ({ ...prev, [m.user_id]: e.target.value === "" ? 0 : parseFloat(e.target.value) }))}
+                          className="w-24 px-2 py-1 bg-[var(--color-surface-container-lowest)] border border-[var(--color-outline-variant)] rounded text-sm text-right focus:outline-none focus:border-[var(--color-primary)] font-mono"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="w-full mt-4 flex justify-end">
                 <button
                   type="submit"
                   disabled={submittingExpense}
-                  className="w-full sm:w-auto py-2 px-6 bg-[var(--color-primary)] text-[var(--color-on-primary)] font-heading font-medium rounded-lg shadow-sm hover:opacity-90 disabled:opacity-50 transition-all"
+                  className="w-full sm:w-auto py-2.5 px-8 bg-[var(--color-primary)] text-[var(--color-on-primary)] font-heading font-semibold rounded-lg shadow-sm hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
                 >
+                  <Receipt size={18} />
                   {submittingExpense ? "Adding..." : "Add Expense"}
                 </button>
               </div>
@@ -659,6 +905,7 @@ export default function GroupDetailPage() {
                       <div className="flex-1">
                         <p className="font-medium text-[var(--color-on-surface)]">{expense.description}</p>
                         <div className="flex items-center gap-2 text-sm text-[var(--color-on-surface-variant)] mt-1">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[expense.category] || CATEGORY_COLORS["Other"] }} title={expense.category || "Other"}></div>
                           <span className="font-medium text-[var(--color-on-surface)]">{isPayer ? "you" : expense.payer.full_name}</span>
                           <span>•</span>
                           <span>{new Date(expense.created_at).toLocaleDateString()}</span>
