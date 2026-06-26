@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const CATEGORY_COLORS: Record<string, string> = {
   "food": "#f59e0b",
@@ -154,11 +156,121 @@ export default function ExpensesPage() {
     return Object.keys(data).map(key => ({ name: key, value: data[key] })).sort((a, b) => b.value - a.value);
   }, [filteredExpenses]);
 
+  const generatePDF = async () => {
+    const doc = new jsPDF();
+    
+    // Title
+    doc.setFontSize(20);
+    doc.setTextColor(0, 93, 144); // Primary color
+    doc.text("Personal Expenses Summary", 14, 22);
+    
+    // Subtitle / Date
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+    doc.text(`Time Filter: ${timeFilter.charAt(0).toUpperCase() + timeFilter.slice(1)}`, 14, 35);
+    
+    // Summary Stats
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Total Spent: Rs. ${totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 14, 45);
+    doc.text(`Budget: Rs. ${budget.toLocaleString()}`, 14, 52);
+    
+    if (totalSpent > budget) {
+      doc.setTextColor(186, 26, 26); // Error color
+      doc.text(`Status: Over budget by Rs. ${(totalSpent - budget).toLocaleString()}`, 14, 59);
+    } else {
+      doc.setTextColor(16, 185, 129); // Success color
+      doc.text(`Status: Under budget by Rs. ${(budget - totalSpent).toLocaleString()}`, 14, 59);
+    }
+
+    // Table Data
+    const tableColumn = ["Date", "Description", "Category", "Amount (Rs.)"];
+    const tableRows = filteredExpenses.map(exp => [
+      new Date(exp.created_at).toLocaleDateString(),
+      exp.description,
+      exp.category.charAt(0).toUpperCase() + exp.category.slice(1),
+      Number(exp.amount).toFixed(2)
+    ]);
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 65,
+      theme: 'striped',
+      headStyles: { fillColor: [0, 93, 144] },
+      styles: { fontSize: 10, cellPadding: 3 },
+      alternateRowStyles: { fillColor: [248, 243, 237] }
+    });
+
+    // Add Footer to all pages
+    const getLogoBase64 = (): Promise<string> => {
+      return new Promise((resolve) => {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#003e5c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/><circle cx="12" cy="5" r="3"/></svg>`;
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = 64;
+          canvas.height = 64;
+          const ctx = canvas.getContext('2d');
+          if (ctx) ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        };
+        img.src = 'data:image/svg+xml;base64,' + btoa(svg);
+      });
+    };
+    const logoData = await getLogoBase64();
+
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      
+      // Top border of footer
+      doc.setDrawColor(226, 232, 240); // slate-200
+      doc.setLineWidth(0.5);
+      doc.line(14, pageHeight - 20, pageWidth - 14, pageHeight - 20);
+
+      // Logo
+      doc.addImage(logoData, 'PNG', 14, pageHeight - 15, 6, 6);
+      
+      // Brand Text
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 62, 92);
+      doc.text("CruiseSplit", 22, pageHeight - 10.5);
+      
+      // Date and Time
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(100, 116, 139);
+      const dateStr = new Date().toLocaleString(undefined, { 
+        dateStyle: 'medium', 
+        timeStyle: 'short' 
+      });
+      const generatedText = `Generated on ${dateStr}`;
+      const textWidth = doc.getStringUnitWidth(generatedText) * doc.getFontSize() / doc.internal.scaleFactor;
+      doc.text(generatedText, pageWidth - 14 - textWidth, pageHeight - 11);
+    }
+
+    doc.save("personal-expenses-summary.pdf");
+  };
+
   return (
     <div className="w-full">
-      <div className="mb-section-margin">
-        <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-2">My Expenses</h1>
-        <p className="font-body-md text-body-md text-on-surface-variant">Log your daily adventures and keep the crew sorted.</p>
+      <div className="mb-section-margin flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+        <div>
+          <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-2">My Expenses</h1>
+          <p className="font-body-md text-body-md text-on-surface-variant">Log your daily adventures and keep the crew sorted.</p>
+        </div>
+        <button 
+          onClick={generatePDF}
+          className="flex items-center gap-2 bg-primary text-on-primary px-4 py-2 rounded-lg font-label-md text-label-md hover:bg-primary/90 transition-colors shadow-sm self-start md:self-auto"
+        >
+          <span className="material-symbols-outlined text-[18px]">download</span>
+          Download Trip Summary
+        </button>
       </div>
 
       {error && (

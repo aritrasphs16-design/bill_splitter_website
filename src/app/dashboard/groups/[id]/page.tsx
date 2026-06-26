@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Trash2, UserPlus, Receipt, HandCoins, User, Users, Send } from "lucide-react";
+import { ArrowLeft, Trash2, UserPlus, Receipt, HandCoins, User, Users, Send, Download } from "lucide-react";
 import Link from "next/link";
 import { calculateSettlements, Member, ExpenseInfo, Transaction, SettlementInfo } from "@/lib/settlement-algorithm";
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const CATEGORIES = ["Food", "Transport", "Hotel", "Activities", "Other"];
 const CATEGORY_COLORS: Record<string, string> = {
@@ -501,6 +503,161 @@ export default function GroupDetailPage() {
     setNudging(null);
   };
 
+  const generateGroupPDF = async () => {
+    if (!group) return;
+    const doc = new jsPDF();
+    
+    // Title
+    doc.setFontSize(20);
+    doc.setTextColor(0, 93, 144);
+    doc.text(`Group Summary: ${group.name}`, 14, 22);
+    
+    // Subtitle / Date
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Created By: ${group.creator.full_name}`, 14, 30);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 35);
+    
+    // Summary Stats
+    const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Total Spent: Rs. ${totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 14, 45);
+    doc.text(`Total Members: ${members.length}`, 14, 52);
+    doc.text(`Total Expenses: ${expenses.length}`, 14, 59);
+
+    let currentY = 70;
+
+    // Members Table
+    doc.setFontSize(14);
+    doc.setTextColor(0, 93, 144);
+    doc.text("Group Members", 14, currentY);
+    currentY += 5;
+
+    const memberRows = members.map(m => [m.users.full_name, m.users.email]);
+    autoTable(doc, {
+      head: [["Name", "Email"]],
+      body: memberRows,
+      startY: currentY,
+      theme: 'grid',
+      headStyles: { fillColor: [0, 93, 144] },
+      styles: { fontSize: 10, cellPadding: 3 }
+    });
+    currentY = (doc as any).lastAutoTable.finalY + 15;
+
+    // Debts / Settlements
+    doc.setFontSize(14);
+    doc.setTextColor(0, 93, 144);
+    doc.text("Settlements (Who owes whom)", 14, currentY);
+    currentY += 5;
+
+    if (settlements.length === 0) {
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text("All settled up! No pending debts.", 14, currentY + 5);
+      currentY += 15;
+    } else {
+      const settlementRows = settlements.map(s => [
+        s.fromName,
+        "owes",
+        s.toName,
+        `Rs. ${s.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      ]);
+      autoTable(doc, {
+        head: [["Debtor", "", "Creditor", "Amount"]],
+        body: settlementRows,
+        startY: currentY,
+        theme: 'striped',
+        headStyles: { fillColor: [163, 61, 20] }, // Secondary color theme
+        styles: { fontSize: 10, cellPadding: 3 }
+      });
+      currentY = (doc as any).lastAutoTable.finalY + 15;
+    }
+
+    // Expenses Timeline
+    doc.addPage();
+    currentY = 20;
+    doc.setFontSize(14);
+    doc.setTextColor(0, 93, 144);
+    doc.text("Expenses Log", 14, currentY);
+    currentY += 5;
+
+    if (expenses.length === 0) {
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text("No expenses recorded yet.", 14, currentY + 5);
+    } else {
+      const expenseRows = expenses.map(e => [
+        new Date(e.created_at).toLocaleDateString(),
+        e.payer.full_name,
+        e.description,
+        e.category,
+        `Rs. ${e.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      ]);
+      autoTable(doc, {
+        head: [["Date", "Paid By", "Description", "Category", "Amount"]],
+        body: expenseRows,
+        startY: currentY,
+        theme: 'striped',
+        headStyles: { fillColor: [0, 93, 144] },
+        styles: { fontSize: 10, cellPadding: 3 }
+      });
+    }
+
+    // Add Footer to all pages
+    const getLogoBase64 = (): Promise<string> => {
+      return new Promise((resolve) => {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#003e5c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/><circle cx="12" cy="5" r="3"/></svg>`;
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = 64;
+          canvas.height = 64;
+          const ctx = canvas.getContext('2d');
+          if (ctx) ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        };
+        img.src = 'data:image/svg+xml;base64,' + btoa(svg);
+      });
+    };
+    const logoData = await getLogoBase64();
+
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      
+      // Top border of footer
+      doc.setDrawColor(226, 232, 240); // slate-200
+      doc.setLineWidth(0.5);
+      doc.line(14, pageHeight - 20, pageWidth - 14, pageHeight - 20);
+
+      // Logo
+      doc.addImage(logoData, 'PNG', 14, pageHeight - 15, 6, 6);
+      
+      // Brand Text
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 62, 92);
+      doc.text("CruiseSplit", 22, pageHeight - 10.5);
+      
+      // Date and Time
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(100, 116, 139);
+      const dateStr = new Date().toLocaleString(undefined, { 
+        dateStyle: 'medium', 
+        timeStyle: 'short' 
+      });
+      const generatedText = `Generated on ${dateStr}`;
+      const textWidth = doc.getStringUnitWidth(generatedText) * doc.getFontSize() / doc.internal.scaleFactor;
+      doc.text(generatedText, pageWidth - 14 - textWidth, pageHeight - 11);
+    }
+
+    doc.save(`${group.name.replace(/\\s+/g, '-').toLowerCase()}-trip-summary.pdf`);
+  };
+
   if (loading) {
     return <div className="text-[var(--color-on-background)] font-medium">Loading group details...</div>;
   }
@@ -511,16 +668,25 @@ export default function GroupDetailPage() {
 
   return (
     <div className="space-y-8 pb-12">
-      <div>
-        <Link href="/dashboard/groups" className="inline-flex items-center gap-2 text-[var(--color-primary)] hover:underline font-medium mb-4">
-          <ArrowLeft size={20} /> Back to Groups
-        </Link>
-        <h1 className="text-3xl md:text-4xl font-heading font-bold text-[var(--color-primary)]">
-          {group.name}
-        </h1>
-        <p className="text-[var(--color-on-surface-variant)] mt-2 font-medium">
-          Created by {group.created_by === userId ? "you" : group.creator.full_name} • {new Date(group.created_at).toLocaleDateString()}
-        </p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+          <Link href="/dashboard/groups" className="inline-flex items-center gap-2 text-[var(--color-primary)] hover:underline font-medium mb-4">
+            <ArrowLeft size={20} /> Back to Groups
+          </Link>
+          <h1 className="text-3xl md:text-4xl font-heading font-bold text-[var(--color-primary)]">
+            {group.name}
+          </h1>
+          <p className="text-[var(--color-on-surface-variant)] mt-2 font-medium">
+            Created by {group.created_by === userId ? "you" : group.creator.full_name} • {new Date(group.created_at).toLocaleDateString()}
+          </p>
+        </div>
+        <button
+          onClick={generateGroupPDF}
+          className="flex items-center gap-2 bg-[var(--color-primary)] text-[var(--color-on-primary)] px-5 py-2.5 rounded-lg font-heading font-semibold hover:bg-[var(--color-primary)]/90 transition-all shadow-md active:translate-y-1 self-start md:self-auto"
+        >
+          <Download size={18} />
+          Download Trip Summary
+        </button>
       </div>
 
       {/* Stats Cards */}
