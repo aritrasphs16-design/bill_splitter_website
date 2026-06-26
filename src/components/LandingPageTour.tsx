@@ -7,15 +7,11 @@ export default function LandingPageTour() {
   const [run, setRun] = useState(false);
 
   useEffect(() => {
-    // Check if the user has already completed the landing page tour
-    const hasCompletedTour = localStorage.getItem("cruise_landing_tour_completed");
-    if (!hasCompletedTour) {
-      // Small delay to ensure the DOM is fully rendered
-      const timer = setTimeout(() => {
-        setRun(true);
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
+    // Small delay to ensure the DOM is fully rendered
+    const timer = setTimeout(() => {
+      setRun(true);
+    }, 1500);
+    return () => clearTimeout(timer);
   }, []);
 
   const steps: Step[] = [
@@ -71,7 +67,6 @@ export default function LandingPageTour() {
 
     if (finishedStatuses.includes(status)) {
       setRun(false);
-      localStorage.setItem("cruise_landing_tour_completed", "true");
     }
   };
 
