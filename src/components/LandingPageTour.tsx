@@ -77,48 +77,10 @@ export default function LandingPageTour() {
 
   return (
     <Joyride
-      callback={handleJoyrideCallback}
+      onEvent={handleJoyrideCallback}
       continuous
-      hideCloseButton
       run={run}
-      scrollToFirstStep
-      showProgress
-      showSkipButton
-      locale={{ last: 'Finish' }}
       steps={steps}
-      styles={{
-        options: {
-          zIndex: 10000,
-          primaryColor: "#00668c",
-          backgroundColor: "#FFF9F2",
-          arrowColor: "#FFF9F2",
-          textColor: "#1d1b20",
-        },
-        buttonNext: {
-          backgroundColor: "#00668c",
-          borderRadius: "8px",
-          padding: "8px 16px",
-          fontFamily: "inherit",
-          fontWeight: 600,
-        },
-        buttonBack: {
-          color: "#49454f",
-          fontFamily: "inherit",
-        },
-        buttonSkip: {
-          color: "#A33D14",
-          fontFamily: "inherit",
-          fontWeight: 500,
-        },
-        tooltipContainer: {
-          textAlign: "left",
-        },
-        tooltip: {
-          borderRadius: "16px",
-          padding: "20px",
-          boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-        }
-      }}
     />
   );
 }
