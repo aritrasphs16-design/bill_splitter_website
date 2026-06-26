@@ -10,6 +10,7 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -17,8 +18,9 @@ export default function Signup() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(null);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -30,6 +32,10 @@ export default function Signup() {
 
     if (error) {
       setError(error.message);
+      setLoading(false);
+    } else if (data?.user && data.session === null) {
+      // Supabase requires email verification
+      setSuccess("Account created successfully! Please check your email and click the verification link to activate your account. You will not be able to log in until your email is verified.");
       setLoading(false);
     } else {
       router.push("/dashboard/expenses");
@@ -74,7 +80,44 @@ export default function Signup() {
           </div>
         )}
 
+        {success && (
+          <div className="mb-6 p-6 bg-tertiary-container/30 text-on-surface rounded-xl border border-tertiary/20 text-center shadow-inner animate-fade-in">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-tertiary text-on-tertiary mb-4 shadow-md">
+              <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>mark_email_unread</span>
+            </div>
+            <h3 className="font-title-lg text-title-lg text-primary mb-2">Verify Your Email</h3>
+            <p className="font-body-md text-body-md text-on-surface-variant">
+              {success}
+            </p>
+          </div>
+        )}
+
+        {!success && (
+          <div className="mb-6 space-y-3">
+            <div className="p-4 bg-error-container/40 text-on-surface rounded-lg border-l-4 border-error flex items-start gap-3">
+              <span className="material-symbols-outlined text-error mt-0.5">warning</span>
+              <div>
+                <p className="font-label-md text-sm font-bold text-error mb-1">Strict Verification Required</p>
+                <p className="font-body-md text-xs text-on-surface-variant">
+                  You must use a valid email address. Unverified accounts will not be granted access to the platform.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-primary-container/40 text-on-surface rounded-lg border-l-4 border-primary flex items-start gap-3">
+              <span className="material-symbols-outlined text-primary mt-0.5">lightbulb</span>
+              <div>
+                <p className="font-label-md text-sm font-bold text-primary mb-1">Recommendation (Recommended)</p>
+                <p className="font-body-md text-xs text-on-surface-variant">
+                  This project is in active development. Supabase limits email verifications to <strong>3 per hour</strong>. We highly recommend signing up with <strong>Google</strong> to bypass this limit and avoid delays.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Form */}
+        {!success && (
         <form onSubmit={handleSignup} className="space-y-6">
           {/* Full Name */}
           <div className="relative">
@@ -180,6 +223,7 @@ export default function Signup() {
             </button>
           </div>
         </form>
+        )}
         
         {/* Footer Link */}
         <div className="mt-6 text-center">
