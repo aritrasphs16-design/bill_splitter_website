@@ -5,9 +5,11 @@ CruiseSplit is a modern, responsive web application designed to take the headach
 ## 🚀 Key Features
 
 *   **Captain's Dashboard**: A high-level overview of your total spent, active fleets (groups), and exactly how much you owe or are owed.
-*   **Personal Manifest**: Log and categorize your personal daily expenses (Food, Drinks, Activities, Shopping).
+*   **Personal Manifest**: Log and categorize your personal daily expenses. Features interactive Donut Charts for spending analytics and a dynamic Monthly Budget tracker that changes color as you approach your limit.
 *   **Shared Fleets (Groups)**: Create trips and invite crew members.
 *   **Smart Settlements**: Add shared group expenses and let the app calculate the net balances. The algorithm ensures everyone gets squared away with the minimum number of transactions possible!
+*   **Custom Splits**: Not everything is split equally! Support for splitting by Exact Amounts or Percentages.
+*   **Multi-Currency Support**: Traveling internationally? Enter expenses in USD, EUR, GBP, etc., and let the app instantly convert it to your base currency using real-time rates from the Frankfurter API!
 *   **100% Financial Transparency (Audit Trail)**: A detailed, chronological Timeline logs every action in the group—from members joining to expenses added and debts settled.
 *   **Settle Up with UPI**: Easily pay your friends using automatically generated UPI QR codes straight from the app!
 *   **Live Discussions**: Built-in real-time group chat so you can discuss expenses and coordinate plans seamlessly.
