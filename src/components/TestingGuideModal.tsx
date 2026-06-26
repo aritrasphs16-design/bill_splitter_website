@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X, UserPlus, Users, Receipt, HandCoins } from "lucide-react";
+import { X, UserPlus, Users, Receipt, HandCoins, AlertTriangle } from "lucide-react";
 
 interface TestingGuideModalProps {
   isOpen: boolean;
@@ -51,6 +51,15 @@ export default function TestingGuideModal({ isOpen, onClose }: TestingGuideModal
 
               {/* Content */}
               <div className="p-6 overflow-y-auto space-y-6">
+                
+                {/* Critical Alert */}
+                <div className="bg-[#FFF0F0] border border-[#FFD6D6] rounded-xl p-4 flex gap-3 text-[#A33D14] shadow-sm">
+                  <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5 text-[#E02424]" />
+                  <div>
+                    <h4 className="font-bold text-sm mb-1 text-[#E02424]">CRITICAL REQUIREMENT</h4>
+                    <p className="text-sm">To add members to a group, <strong>all members must be signed up first</strong> using their exact email addresses.</p>
+                  </div>
+                </div>
                 
                 {/* Step 1 */}
                 <div className="flex gap-4 group">
