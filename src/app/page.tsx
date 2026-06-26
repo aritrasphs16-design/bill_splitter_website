@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import LandingPageTour from "@/components/LandingPageTour";
 import TestingGuideModal from "@/components/TestingGuideModal";
-import { Anchor, Ship, PieChart, Users, Receipt, ArrowRight, Wallet, CheckCircle2, FlaskConical } from "lucide-react";
+import { Anchor, Ship, PieChart, Users, Receipt, ArrowRight, Wallet, CheckCircle2, FlaskConical, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Home() {
@@ -100,9 +100,22 @@ export default function Home() {
               </span>
             </h1>
             
-            <p className="font-body-lg text-xl text-[var(--color-on-surface-variant)] max-w-2xl mx-auto mb-12">
+            <p className="font-body-lg text-xl text-[var(--color-on-surface-variant)] max-w-2xl mx-auto mb-8">
               Whether it's a weekend road trip or a massive cruise, CruiseSplit tracks who paid what, handles custom percentage splits, and gives you beautiful analytics so your crew can just focus on the adventure.
             </p>
+
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="mb-10 w-full max-w-xl mx-auto bg-[#FFF0F0] border border-[#FFD6D6] rounded-xl p-4 flex gap-3 text-[#A33D14] text-left shadow-sm"
+            >
+              <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5 text-[#E02424]" />
+              <div className="space-y-1">
+                 <h4 className="font-bold text-sm text-[#E02424]">CRITICAL REQUIREMENT</h4>
+                 <p className="text-sm">All members must sign up first to be added to a group. We highly recommend using <strong>Google Sign-In</strong> because our password signup currently limits to 3 emails per hour.</p>
+              </div>
+            </motion.div>
             
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
