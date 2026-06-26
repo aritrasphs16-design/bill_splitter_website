@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Joyride, CallBackProps, STATUS, Step } from "react-joyride";
+import { Joyride, STATUS, Step } from "react-joyride";
 
 export default function LandingPageTour() {
   const [run, setRun] = useState(false);
@@ -28,7 +28,6 @@ export default function LandingPageTour() {
         </div>
       ),
       placement: "center",
-      disableBeacon: true,
     },
     {
       target: "#tour-hero",
@@ -66,7 +65,7 @@ export default function LandingPageTour() {
     }
   ];
 
-  const handleJoyrideCallback = (data: CallBackProps) => {
+  const handleJoyrideCallback = (data: { status: string }) => {
     const { status } = data;
     const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
 
