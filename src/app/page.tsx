@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import LandingPageTour from "@/components/LandingPageTour";
 import { Anchor, Ship, PieChart, Users, Receipt, ArrowRight, Wallet, CheckCircle2 } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function Home() {
   const router = useRouter();
@@ -18,6 +20,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[var(--color-surface)] text-[var(--color-on-surface)] selection:bg-[var(--color-primary)] selection:text-[var(--color-on-primary)] overflow-x-hidden flex flex-col">
+      <LandingPageTour />
       
       {/* 1. Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[var(--color-surface)]/80 backdrop-blur-md border-b border-[var(--color-outline-variant)]">
@@ -64,14 +67,29 @@ export default function Home() {
           <div className="absolute top-1/3 right-10 w-72 h-72 bg-[var(--color-tertiary-container)] rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-pulse" style={{animationDelay: '1s'}}></div>
           <div className="absolute -bottom-8 left-1/3 w-72 h-72 bg-[var(--color-secondary-container)] rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-pulse" style={{animationDelay: '2s'}}></div>
           
-          <div className="relative z-10 max-w-4xl mx-auto text-center flex flex-col items-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--color-primary-container)] text-[var(--color-on-primary-container)] font-label-sm mb-8 border border-[var(--color-primary)]/20 shadow-sm">
+          <motion.div 
+            id="tour-hero"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="relative z-10 max-w-4xl mx-auto text-center flex flex-col items-center"
+          >
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 0 }}
+              animate={{ opacity: 1, scale: 1, y: [0, -8, 0] }}
+              transition={{ 
+                opacity: { delay: 0.2, duration: 0.5 },
+                scale: { delay: 0.2, duration: 0.5 },
+                y: { repeat: Infinity, duration: 3, ease: "easeInOut", delay: 0.7 }
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--color-primary-container)] text-[var(--color-on-primary-container)] font-label-sm mb-8 border border-[var(--color-primary)]/20 shadow-sm"
+            >
               <span className="relative flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-primary)] opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-[var(--color-primary)]"></span>
               </span>
               CruiseSplit v2.0 is Live!
-            </div>
+            </motion.div>
             
             <h1 className="font-display-lg text-5xl md:text-7xl font-extrabold text-[var(--color-on-surface)] leading-tight mb-8">
               Split travel expenses <br/>
@@ -84,7 +102,12 @@ export default function Home() {
               Whether it's a weekend road trip or a massive cruise, CruiseSplit tracks who paid what, handles custom percentage splits, and gives you beautiful analytics so your crew can just focus on the adventure.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+              className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto"
+            >
               <Link 
                 href={isLoggedIn ? "/dashboard/expenses" : "/login"} 
                 className="bg-[var(--color-primary)] text-[var(--color-on-primary)] px-8 py-4 rounded-full font-title-md text-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center gap-2 w-full sm:w-auto"
@@ -93,27 +116,39 @@ export default function Home() {
                 Start your voyage
               </Link>
               <a 
-                href="#features" 
+                href="#tour-features" 
                 className="bg-[var(--color-surface-container)] text-[var(--color-on-surface)] border border-[var(--color-outline-variant)] px-8 py-4 rounded-full font-title-md text-lg hover:bg-[var(--color-surface-container-high)] transition-all flex items-center justify-center w-full sm:w-auto"
               >
                 See how it works
               </a>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </section>
 
         {/* 3. Features Bento Grid */}
-        <section id="features" className="py-24 px-6 bg-[var(--color-surface-container-lowest)] relative z-20">
+        <section id="tour-features" className="py-24 px-6 bg-[var(--color-surface-container-lowest)] relative z-20">
           <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-16">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-16"
+            >
               <h2 className="font-display-md text-3xl md:text-5xl font-bold text-[var(--color-on-surface)] mb-4">Everything you need for smooth sailing</h2>
               <p className="font-body-lg text-[var(--color-on-surface-variant)] max-w-2xl mx-auto">Ditch the complicated spreadsheets. We built the ultimate ledger for modern travelers.</p>
-            </div>
+            </motion.div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[300px]">
               
               {/* Feature 1 - Large */}
-              <div className="md:col-span-2 bg-gradient-to-br from-[var(--color-primary-container)] to-[var(--color-surface-container)] p-8 rounded-3xl shadow-sm border border-[var(--color-outline-variant)] flex flex-col justify-between overflow-hidden group">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="md:col-span-2 bg-gradient-to-br from-[var(--color-primary-container)] to-[var(--color-surface-container)] p-8 rounded-3xl shadow-sm border border-[var(--color-outline-variant)] flex flex-col justify-between overflow-hidden group"
+              >
                 <div>
                   <div className="w-12 h-12 bg-[var(--color-primary)] text-[var(--color-on-primary)] rounded-xl flex items-center justify-center mb-6 shadow-md">
                     <PieChart className="w-6 h-6" />
@@ -130,10 +165,16 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Feature 2 - Small */}
-              <div className="bg-[var(--color-tertiary-container)]/30 p-8 rounded-3xl shadow-sm border border-[var(--color-tertiary-container)] flex flex-col justify-between">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="bg-[var(--color-tertiary-container)]/30 p-8 rounded-3xl shadow-sm border border-[var(--color-tertiary-container)] flex flex-col justify-between"
+              >
                 <div>
                   <div className="w-12 h-12 bg-[var(--color-tertiary)] text-[var(--color-on-tertiary)] rounded-xl flex items-center justify-center mb-6 shadow-md">
                     <Users className="w-6 h-6" />
@@ -141,10 +182,16 @@ export default function Home() {
                   <h3 className="font-title-lg text-xl font-bold text-[var(--color-on-surface)] mb-2">Custom Splits</h3>
                   <p className="font-body-md text-[var(--color-on-surface-variant)]">Split equally, by exact amounts, or by percentages. Complete flexibility.</p>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Feature 3 - Small */}
-              <div className="bg-[var(--color-secondary-container)]/30 p-8 rounded-3xl shadow-sm border border-[var(--color-secondary-container)] flex flex-col justify-between">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="bg-[var(--color-secondary-container)]/30 p-8 rounded-3xl shadow-sm border border-[var(--color-secondary-container)] flex flex-col justify-between"
+              >
                 <div>
                   <div className="w-12 h-12 bg-[var(--color-secondary)] text-[var(--color-on-secondary)] rounded-xl flex items-center justify-center mb-6 shadow-md">
                     <Wallet className="w-6 h-6" />
@@ -152,10 +199,16 @@ export default function Home() {
                   <h3 className="font-title-lg text-xl font-bold text-[var(--color-on-surface)] mb-2">Smart Settlements</h3>
                   <p className="font-body-md text-[var(--color-on-surface-variant)]">Our algorithm calculates the minimum number of transactions to get everyone paid back.</p>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Feature 4 - Large */}
-              <div className="md:col-span-2 bg-[var(--color-surface-container)] p-8 rounded-3xl shadow-sm border border-[var(--color-outline-variant)] flex flex-col justify-between overflow-hidden relative">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="md:col-span-2 bg-[var(--color-surface-container)] p-8 rounded-3xl shadow-sm border border-[var(--color-outline-variant)] flex flex-col justify-between overflow-hidden relative"
+              >
                 <div className="z-10 relative">
                   <div className="w-12 h-12 bg-[var(--color-surface-variant)] text-[var(--color-on-surface)] rounded-xl flex items-center justify-center mb-6 shadow-sm border border-[var(--color-outline)]">
                     <Receipt className="w-6 h-6" />
@@ -174,15 +227,21 @@ export default function Home() {
                       </div>
                    </div>
                 </div>
-              </div>
+              </motion.div>
 
             </div>
           </div>
         </section>
 
         {/* 4. Social Proof / CTA */}
-        <section className="py-24 px-6 bg-[var(--color-surface)] border-t border-[var(--color-outline-variant)] relative overflow-hidden">
-          <div className="max-w-4xl mx-auto text-center relative z-10">
+        <section id="tour-cta" className="py-24 px-6 bg-[var(--color-surface)] border-t border-[var(--color-outline-variant)] relative overflow-hidden">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6 }}
+            className="max-w-4xl mx-auto text-center relative z-10"
+          >
             <h2 className="font-display-md text-3xl md:text-4xl font-bold text-[var(--color-on-surface)] mb-8">Ready to drop anchor?</h2>
             <div className="flex flex-col sm:flex-row gap-4 items-center justify-center mb-12">
                <div className="flex items-center gap-2"><CheckCircle2 className="text-[var(--color-primary)] w-5 h-5"/> <span className="text-[var(--color-on-surface-variant)]">Free forever</span></div>
@@ -198,7 +257,7 @@ export default function Home() {
               Get Started Now
               <ArrowRight className="w-6 h-6" />
             </Link>
-          </div>
+          </motion.div>
           
           {/* Wave graphic bottom */}
           <div className="absolute bottom-0 left-0 w-full opacity-10 translate-y-1/2 pointer-events-none">
@@ -220,8 +279,10 @@ export default function Home() {
           <p className="text-[var(--color-on-surface-variant)] text-sm">
             © {new Date().getFullYear()} CruiseSplit. All rights reserved.
           </p>
-          <div className="flex gap-6">
-            <a href="https://github.com/aritrasphs16-design/bill_splitter_website" target="_blank" rel="noopener noreferrer" className="text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary)] transition-colors">GitHub</a>
+          <div className="flex gap-6 items-center">
+            <a href="https://github.com/aritrasphs16-design/bill_splitter_website" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary)] transition-colors">
+              GitHub
+            </a>
             <Link href="/privacy" className="text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary)] transition-colors">Privacy Policy</Link>
           </div>
         </div>

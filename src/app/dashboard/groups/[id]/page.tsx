@@ -323,10 +323,11 @@ export default function GroupDetailPage() {
     let rate = 1;
     if (expenseCurrency !== "INR") {
       try {
-        const res = await fetch(`https://api.frankfurter.app/latest?from=${expenseCurrency}&to=INR`);
+        const currencyLower = expenseCurrency.toLowerCase();
+        const res = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${currencyLower}.json`);
         if (!res.ok) throw new Error("Failed to fetch exchange rate");
         const data = await res.json();
-        rate = data.rates["INR"];
+        rate = data[currencyLower]["inr"];
       } catch (err) {
         console.error(err);
         setError(`Failed to get live exchange rate for ${expenseCurrency}. Please try again later.`);
