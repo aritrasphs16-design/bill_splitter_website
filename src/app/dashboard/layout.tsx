@@ -13,6 +13,7 @@ export default function DashboardLayout({
 }) {
   const [email, setEmail] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("Captain");
+  const [rank, setRank] = useState("Sailor");
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
@@ -26,6 +27,26 @@ export default function DashboardLayout({
         setEmail(session.user.email ?? "");
         const fullName = session.user.user_metadata?.full_name || "Captain";
         setFirstName(fullName.split(" ")[0]);
+        
+        // Fetch spending to determine rank
+        const { data: expenses } = await supabase
+          .from("personal_expenses")
+          .select("amount")
+          .eq("user_id", session.user.id);
+          
+        let totalSpent = 0;
+        if (expenses) {
+          totalSpent = expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
+        }
+        
+        if (totalSpent >= 20000) {
+          setRank("Captain");
+        } else if (totalSpent >= 5000) {
+          setRank("Navigator");
+        } else {
+          setRank("Sailor");
+        }
+        
         setLoading(false);
       }
     };
@@ -41,6 +62,7 @@ export default function DashboardLayout({
     { name: "Home", href: "/dashboard", icon: "anchor" },
     { name: "Expenses", href: "/dashboard/expenses", icon: "receipt_long" },
     { name: "Groups", href: "/dashboard/groups", icon: "groups" },
+    { name: "Profile", href: "/dashboard/profile", icon: "account_circle" },
   ];
 
   if (loading) {
@@ -61,7 +83,7 @@ export default function DashboardLayout({
               <span className="material-symbols-outlined text-4xl text-primary">sailing</span>
             </div>
             <h2 className="font-title-md text-lg font-bold text-primary text-center">{firstName}'s Log</h2>
-            <p className="font-caption text-xs text-on-surface-variant text-center mt-1 uppercase tracking-wider">Rank: Captain</p>
+            <p className="font-caption text-xs text-on-surface-variant text-center mt-1 uppercase tracking-wider">Rank: {rank}</p>
           </div>
           <ul className="flex flex-col gap-2 flex-grow mt-4">
             {navLinks.map((link) => {
