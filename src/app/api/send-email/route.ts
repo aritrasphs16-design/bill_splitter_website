@@ -37,7 +37,7 @@ export async function POST(request: Request) {
             <p style="margin: 0; font-size: 14px; color: #00668c; text-transform: uppercase; letter-spacing: 1px;">Amount Paid</p>
             <p style="margin: 5px 0 0; font-size: 32px; font-weight: bold; color: #00668c; font-family: monospace;">₹${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           </div>
-          <p style="font-size: 14px; color: #79747e; text-align: center; margin-top: 30px;">Sent securely from CruiseSplit.</p>
+          <p style="font-size: 14px; color: #79747e; text-align: center; margin-top: 30px;">Sent securely from SplitEasy.</p>
         </div>
       `;
     } else if (type === 'nudge') {
@@ -51,8 +51,8 @@ export async function POST(request: Request) {
             <p style="margin: 0; font-size: 14px; color: #a33d14; text-transform: uppercase; letter-spacing: 1px;">Amount Due</p>
             <p style="margin: 5px 0 0; font-size: 32px; font-weight: bold; color: #a33d14; font-family: monospace;">₹${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           </div>
-          <p style="font-size: 16px; color: #49454f; text-align: center;">Head over to CruiseSplit to clear your balance!</p>
-          <p style="font-size: 14px; color: #79747e; text-align: center; margin-top: 30px;">Sent securely from CruiseSplit.</p>
+          <p style="font-size: 16px; color: #49454f; text-align: center;">Head over to SplitEasy to clear your balance!</p>
+          <p style="font-size: 14px; color: #79747e; text-align: center; margin-top: 30px;">Sent securely from SplitEasy.</p>
         </div>
       `;
     } else {
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
     }
 
     const mailOptions = {
-      from: `"CruiseSplit Notifications" <${emailUser}>`,
+      from: `"SplitEasy Notifications" <${emailUser}>`,
       to: recipientEmail,
       subject,
       html: htmlContent,

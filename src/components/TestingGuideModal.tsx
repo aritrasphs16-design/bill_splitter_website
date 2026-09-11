@@ -38,7 +38,7 @@ export default function TestingGuideModal({ isOpen, onClose }: TestingGuideModal
                   </div>
                   <div>
                     <h2 className="text-xl font-heading font-bold text-[var(--color-primary)]">Quick Testing Guide</h2>
-                    <p className="text-sm text-[var(--color-on-surface-variant)] font-medium">How to experience the magic of CruiseSplit</p>
+                    <p className="text-sm text-[var(--color-on-surface-variant)] font-medium">How to experience the magic of SplitEasy</p>
                   </div>
                 </div>
                 <button
@@ -77,7 +77,7 @@ export default function TestingGuideModal({ isOpen, onClose }: TestingGuideModal
                       <UserPlus size={20} className="text-[#00668c]" /> The Setup
                     </h3>
                     <p className="text-[var(--color-on-surface-variant)] leading-relaxed">
-                      CruiseSplit connects real users! To see it in action, you need two accounts. <br/>
+                      SplitEasy connects real users! To see it in action, you need two accounts. <br/>
                       <strong className="text-[var(--color-primary)]">Create two separate accounts</strong> (e.g., <code className="bg-[var(--color-surface-variant)] px-1 py-0.5 rounded text-sm">user1@test.com</code> and <code className="bg-[var(--color-surface-variant)] px-1 py-0.5 rounded text-sm">user2@test.com</code>). You can use two different browsers or an Incognito window.
                     </p>
                   </div>

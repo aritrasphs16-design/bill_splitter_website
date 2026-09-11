@@ -38,7 +38,7 @@ export default function Signup() {
       setSuccess("Account created successfully! Please check your email and click the verification link to activate your account. You will not be able to log in until your email is verified.");
       setLoading(false);
     } else {
-      router.push("/dashboard/expenses");
+      router.push("/dashboard");
     }
   };
 
@@ -56,22 +56,22 @@ export default function Signup() {
 
   return (
     <div className="bg-surface font-body-md text-on-surface antialiased min-h-screen flex w-full flex-1 items-center justify-center p-container-padding relative overflow-hidden">
-      {/* Background Decoration: Tropical Sunset Gradient & Palms */}
-      <div className="absolute inset-0 z-0 bg-gradient-to-br from-tertiary-fixed-dim via-error-container to-primary-fixed-dim opacity-60"></div>
+      {/* Background Decoration: Professional Soft Mesh Gradient */}
+      <div className="absolute inset-0 z-0 bg-gradient-to-br from-[#e0f2fe] via-[#f0f9ff] to-[#fecdd3] opacity-80"></div>
       <div 
-        className="absolute inset-0 z-0 bg-cover bg-bottom opacity-20 mix-blend-multiply" 
-        style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBkbAsEuO_FcqihzZO5uVbCG2kRe1S8j0hOkcidw_mPrPx4DQCwP5uxlDep9TmbUqmACLUq-2xA6KJr97TSKq5BKX8bA9_kYph_N_fgtsATGpwaPL4crVP7rMQKPYSNmzJD76kcgIrbhCB1J4T6Ic-hxf7mRg1sNnaSFznMCDV4o_QX1jqQuNSxBxzJEDkIlXIw6bnBM7miRnClNF7ltYT9GUurESzfz8zJ-IRiqL8iWeDhhe02ZqF5FFyE_ZcFLkGy7GloLJPh__4')" }}
+        className="absolute inset-0 z-0 bg-cover bg-center opacity-30 mix-blend-multiply" 
+        style={{ backgroundImage: "url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2000&auto=format&fit=crop')" }}
       ></div>
       
       {/* Main Signup Card (Shipping Manifest / Boarding Pass Proportions) */}
       <div className="relative z-10 w-full max-w-md bg-surface-container-lowest rounded-xl p-8 md:p-10 shadow-[0_12px_48px_rgba(3,4,94,0.08)] animate-float backdrop-blur-sm border border-surface-container-high/50">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-container text-on-primary-container mb-4 shadow-sm">
-            <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>sailing</span>
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#e0f2fe] text-[#00668c] mb-4 shadow-sm">
+            <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>group_add</span>
           </div>
-          <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary">Join the Crew</h1>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-2">Set sail on your next shared adventure.</p>
+          <h1 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-slate-900">Create an Account</h1>
+          <p className="font-body-md text-body-md text-slate-500 mt-2">Start splitting bills effortlessly with your friends.</p>
         </div>
         
         {error && (
@@ -118,16 +118,16 @@ export default function Signup() {
 
         {/* Form */}
         {!success && (
-        <form onSubmit={handleSignup} className="space-y-6">
+        <form onSubmit={handleSignup} className="space-y-5">
           {/* Full Name */}
-          <div className="relative">
-            <label className="block font-label-md text-label-md text-on-surface-variant mb-1" htmlFor="fullName">Full Name</label>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5" htmlFor="fullName">Full Name</label>
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-0 top-1/2 -translate-y-1/2 text-outline px-2">person</span>
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none">person</span>
               <input 
-                className="w-full bg-transparent border-0 input-wave pl-10 pr-4 py-2 font-body-md text-on-surface focus:ring-0 placeholder:text-outline-variant focus:outline-none" 
+                className="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-3 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#00668c]/20 focus:border-[#00668c] transition-all placeholder:text-slate-400" 
                 id="fullName" 
-                placeholder="Captain Stubing" 
+                placeholder="Jane Doe" 
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
@@ -138,14 +138,14 @@ export default function Signup() {
           </div>
           
           {/* Email */}
-          <div className="relative">
-            <label className="block font-label-md text-label-md text-on-surface-variant mb-1" htmlFor="email">Email Address</label>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5" htmlFor="email">Email Address</label>
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-0 top-1/2 -translate-y-1/2 text-outline px-2">mail</span>
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none">mail</span>
               <input 
-                className="w-full bg-transparent border-0 input-wave pl-10 pr-4 py-2 font-body-md text-on-surface focus:ring-0 placeholder:text-outline-variant focus:outline-none" 
+                className="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-3 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#00668c]/20 focus:border-[#00668c] transition-all placeholder:text-slate-400" 
                 id="email" 
-                placeholder="captain@cruisesplit.com" 
+                placeholder="name@example.com" 
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -156,12 +156,12 @@ export default function Signup() {
           </div>
           
           {/* Password */}
-          <div className="relative">
-            <label className="block font-label-md text-label-md text-on-surface-variant mb-1" htmlFor="password">Password</label>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5" htmlFor="password">Password</label>
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-0 top-1/2 -translate-y-1/2 text-outline px-2">lock</span>
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none">lock</span>
               <input 
-                className="w-full bg-transparent border-0 input-wave pl-10 pr-4 py-2 font-body-md text-on-surface focus:ring-0 placeholder:text-outline-variant focus:outline-none" 
+                className="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-3 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#00668c]/20 focus:border-[#00668c] transition-all placeholder:text-slate-400" 
                 id="password" 
                 placeholder="••••••••" 
                 type="password"
@@ -172,39 +172,30 @@ export default function Signup() {
                 minLength={6}
               />
             </div>
-            {/* Password Strength Bar Placeholder */}
+            {/* Password Strength Bar */}
             {password.length > 0 && (
-              <>
-                <div className="flex gap-2 h-1.5 mt-3">
-                  <div className="flex-1 bg-tertiary rounded-full shadow-inner"></div>
-                  <div className={`flex-1 rounded-full ${password.length >= 6 ? 'bg-surface-variant' : 'bg-transparent'}`}></div>
-                  <div className={`flex-1 rounded-full ${password.length >= 8 ? 'bg-surface-variant' : 'bg-transparent'}`}></div>
+              <div className="mt-2">
+                <div className="flex gap-2 h-1.5">
+                  <div className={`flex-1 rounded-full ${password.length > 0 ? 'bg-red-400' : 'bg-slate-200'}`}></div>
+                  <div className={`flex-1 rounded-full ${password.length >= 6 ? 'bg-amber-400' : 'bg-slate-200'}`}></div>
+                  <div className={`flex-1 rounded-full ${password.length >= 8 ? 'bg-emerald-500' : 'bg-slate-200'}`}></div>
                 </div>
-                <p className="font-caption text-caption text-on-surface-variant mt-1 text-right">
-                  {password.length < 6 ? 'Weak' : password.length < 8 ? 'Medium' : 'Strong'}
+                <p className="text-xs text-slate-500 mt-1 text-right font-medium">
+                  {password.length < 6 ? 'Weak' : password.length < 8 ? 'Good' : 'Strong'}
                 </p>
-              </>
+              </div>
             )}
           </div>
           
-          {/* Primary Button (Boarding Pass Style) */}
-          <div className="space-y-4 mt-section-margin">
+          {/* Primary Button */}
+          <div className="pt-2 space-y-4">
             <button 
               type="submit"
-              className="relative w-full bg-tertiary text-on-tertiary font-title-md text-title-md py-4 px-6 rounded-lg overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all group disabled:opacity-50"
+              className="w-full bg-[#00668c] hover:bg-[#005c7a] text-white font-semibold py-3.5 px-6 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:active:scale-100"
               disabled={loading}
             >
-              {/* Perforated Edge Detail */}
-              <div className="absolute -left-2 top-0 bottom-0 w-4 flex flex-col justify-evenly py-2 opacity-80">
-                <div className="w-3 h-3 bg-surface-container-lowest rounded-full"></div>
-                <div className="w-3 h-3 bg-surface-container-lowest rounded-full"></div>
-                <div className="w-3 h-3 bg-surface-container-lowest rounded-full"></div>
-                <div className="w-3 h-3 bg-surface-container-lowest rounded-full"></div>
-              </div>
-              <span className="relative z-10 flex items-center justify-center gap-2">
-                {loading ? "Joining..." : "Start Your Journey"}
-                <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-              </span>
+              <span>{loading ? "Joining..." : "Create Account"}</span>
+              <span className="material-symbols-outlined text-sm">arrow_forward</span>
             </button>
 
             <div className="relative flex items-center py-1">
@@ -227,9 +218,9 @@ export default function Signup() {
         
         {/* Footer Link */}
         <div className="mt-6 text-center">
-          <p className="font-body-md text-body-md text-on-surface-variant">
-            Already part of the crew?{" "}
-            <Link className="font-label-md text-primary hover:text-secondary underline decoration-2 underline-offset-4 transition-colors" href="/login">
+          <p className="font-body-md text-body-md text-slate-500">
+            Already have an account?{" "}
+            <Link className="font-label-md text-[#00668c] hover:text-[#005c7a] underline decoration-2 underline-offset-4 transition-colors" href="/login">
               Log in.
             </Link>
           </p>

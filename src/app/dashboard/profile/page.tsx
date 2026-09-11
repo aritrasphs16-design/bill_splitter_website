@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { UserCircle, Save, AlertTriangle, CheckCircle2, TrendingUp, Users, LogOut, Trash2 } from "lucide-react";
+import { getProfileData, updateProfileData } from "@/app/actions/user";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -57,37 +58,21 @@ export default function ProfilePage() {
       setUserId(session.user.id);
       setEmail(session.user.email || "");
 
-      // Fetch user profile
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", session.user.id)
-        .single();
+      // Fetch user profile and stats from MongoDB
+      const data = await getProfileData(session.user.id);
 
-      if (userError) throw userError;
-
-      if (userData) {
-        setFullName(userData.full_name || "");
-        setUpiId(userData.upi_id || "");
-        setPhoneNumber(userData.phone_number || "");
-        if (userData.default_currency) {
-          setDefaultCurrency(userData.default_currency);
+      if (data.user) {
+        setFullName(data.user.full_name || "");
+        setUpiId(data.user.upi_id || "");
+        setPhoneNumber(data.user.phone_number || "");
+        if (data.user.default_currency) {
+          setDefaultCurrency(data.user.default_currency);
         }
       }
 
-      // Fetch stats
-      const [groupsRes, expensesRes] = await Promise.all([
-        supabase.from("group_members").select("group_id", { count: 'exact' }).eq("user_id", session.user.id),
-        supabase.from("personal_expenses").select("amount").eq("user_id", session.user.id)
-      ]);
-
-      const totalPersonalSpent = expensesRes.data 
-        ? expensesRes.data.reduce((acc, curr) => acc + Number(curr.amount), 0)
-        : 0;
-
       setStats({
-        totalGroups: groupsRes.count || 0,
-        totalPersonalSpent
+        totalGroups: data.stats.totalGroups,
+        totalPersonalSpent: data.stats.totalPersonalSpent
       });
 
     } catch (err: any) {
@@ -109,18 +94,16 @@ export default function ProfilePage() {
     setSuccess(null);
 
     try {
-      // 1. Update the public users table
-      const { error: dbError } = await supabase
-        .from("users")
-        .update({
-          full_name: fullName,
-          upi_id: upiId,
-          phone_number: phoneNumber,
-          default_currency: defaultCurrency
-        })
-        .eq("id", userId);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
 
-      if (dbError) throw dbError;
+      // 1. Update the MongoDB users table
+      await updateProfileData(session.user.id, {
+        full_name: fullName,
+        upi_id: upiId,
+        phone_number: phoneNumber,
+        default_currency: defaultCurrency
+      });
 
       // 2. Update the auth metadata
       const { error: authError } = await supabase.auth.updateUser({

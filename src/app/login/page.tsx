@@ -27,7 +27,7 @@ export default function Login() {
       setError(error.message);
       setLoading(false);
     } else {
-      router.push("/dashboard/expenses");
+      router.push("/dashboard");
     }
   };
 
@@ -45,22 +45,22 @@ export default function Login() {
 
   return (
     <div className="bg-surface font-body-md text-on-surface antialiased min-h-screen flex w-full flex-1 items-center justify-center p-container-padding relative overflow-hidden">
-      {/* Decorative Wave Background Elements */}
-      <div className="absolute inset-0 z-0 bg-gradient-to-br from-tertiary-fixed-dim via-error-container to-primary-fixed-dim opacity-60"></div>
+      {/* Background Decoration: Professional Soft Mesh Gradient */}
+      <div className="absolute inset-0 z-0 bg-gradient-to-br from-[#e0f2fe] via-[#f0f9ff] to-[#fecdd3] opacity-80"></div>
       <div 
-        className="absolute inset-0 z-0 bg-cover bg-bottom opacity-20 mix-blend-multiply" 
-        style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBkbAsEuO_FcqihzZO5uVbCG2kRe1S8j0hOkcidw_mPrPx4DQCwP5uxlDep9TmbUqmACLUq-2xA6KJr97TSKq5BKX8bA9_kYph_N_fgtsATGpwaPL4crVP7rMQKPYSNmzJD76kcgIrbhCB1J4T6Ic-hxf7mRg1sNnaSFznMCDV4o_QX1jqQuNSxBxzJEDkIlXIw6bnBM7miRnClNF7ltYT9GUurESzfz8zJ-IRiqL8iWeDhhe02ZqF5FFyE_ZcFLkGy7GloLJPh__4')" }}
+        className="absolute inset-0 z-0 bg-cover bg-center opacity-30 mix-blend-multiply" 
+        style={{ backgroundImage: "url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2000&auto=format&fit=crop')" }}
       ></div>
       
       {/* Main Login Card */}
       <main className="w-full max-w-md bg-surface-container-lowest rounded-xl shadow-[0_24px_64px_rgba(3,4,94,0.15)] z-10 relative overflow-hidden p-8 border border-surface-container-highest">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-container text-on-primary-container mb-4 shadow-sm">
-            <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>directions_boat</span>
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#e0f2fe] text-[#00668c] mb-4 shadow-sm">
+            <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>account_balance_wallet</span>
           </div>
-          <h1 className="font-headline-lg text-headline-lg text-primary mb-2">Welcome Aboard <span className="inline-block align-middle">⚓</span></h1>
-          <p className="font-body-md text-body-md text-on-surface-variant">Stow your gear and log in to manage your crew's ledger.</p>
+          <h1 className="font-headline-lg text-headline-lg text-slate-900 mb-2">Welcome Back</h1>
+          <p className="font-body-md text-body-md text-slate-500">Log in to track your expenses and settle up.</p>
         </div>
 
         {error && (
@@ -70,50 +70,51 @@ export default function Login() {
         )}
 
         {/* Form */}
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div className="floating-label-group">
+        <form onSubmit={handleLogin} className="space-y-5">
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5" htmlFor="email">Email Address</label>
             <input 
-              className="wave-input w-full bg-transparent border-0 px-0 py-2 font-label-md text-label-md text-on-surface placeholder-transparent" 
+              className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#00668c]/20 focus:border-[#00668c] transition-all placeholder:text-slate-400" 
               id="email" 
-              placeholder=" " 
+              placeholder="name@example.com" 
               required 
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
             />
-            <label className="floating-label font-label-md text-label-md text-on-surface-variant" htmlFor="email">Email Address</label>
           </div>
           
-          <div className="floating-label-group relative">
-            <input 
-              className="wave-input w-full bg-transparent border-0 px-0 py-2 font-label-md text-label-md text-on-surface placeholder-transparent pr-10" 
-              id="password" 
-              placeholder=" " 
-              required 
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-            />
-            <label className="floating-label font-label-md text-label-md text-on-surface-variant" htmlFor="password">Password</label>
-            {/* Password Toggle */}
-            <button 
-              aria-label="Toggle password visibility" 
-              className="absolute right-0 top-6 text-outline-variant hover:text-primary transition-colors focus:outline-none" 
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              <span className="material-symbols-outlined">
-                {showPassword ? "visibility" : "visibility_off"}
-              </span>
-            </button>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5" htmlFor="password">Password</label>
+            <div className="relative">
+              <input 
+                className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#00668c]/20 focus:border-[#00668c] transition-all placeholder:text-slate-400 pr-12" 
+                id="password" 
+                placeholder="••••••••" 
+                required 
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+              />
+              <button 
+                aria-label="Toggle password visibility" 
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none p-1 flex items-center justify-center" 
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                <span className="material-symbols-outlined text-xl leading-none">
+                  {showPassword ? "visibility" : "visibility_off"}
+                </span>
+              </button>
+            </div>
           </div>
           
           {/* Actions */}
-          <div className="pt-4 space-y-4">
+          <div className="pt-2 space-y-4">
             <button 
-              className="ticket-btn w-full bg-tertiary-container hover:bg-tertiary text-on-tertiary-container font-label-md text-label-md py-4 px-6 rounded-lg shadow-sm transition-all active:translate-y-px flex items-center justify-center gap-2 border-l-2 border-r-2 border-dashed border-tertiary-fixed disabled:opacity-50" 
+              className="w-full bg-[#00668c] hover:bg-[#005c7a] text-white font-semibold py-3.5 px-6 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:active:scale-100" 
               type="submit"
               disabled={loading}
             >
@@ -140,10 +141,10 @@ export default function Login() {
         
         {/* Footer */}
         <div className="mt-8 text-center">
-          <p className="font-body-md text-body-md text-on-surface-variant">
-            New to the crew? <br className="md:hidden" />
-            <Link className="text-primary hover:text-secondary font-bold transition-colors inline-flex items-center gap-1 mt-1 md:mt-0" href="/signup">
-              Sign up here <span className="inline-block">🌊</span>
+          <p className="font-body-md text-body-md text-slate-500">
+            Don't have an account?{" "}
+            <Link className="text-[#00668c] hover:text-[#005c7a] font-bold transition-colors inline-flex items-center gap-1 mt-1 md:mt-0" href="/signup">
+              Sign up here
             </Link>
           </p>
         </div>

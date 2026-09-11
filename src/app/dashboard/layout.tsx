@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import Image from "next/image";
+import { syncUserToMongo, getUserProfile } from "@/app/actions/user";
+import NotificationDropdown from "@/components/ui/notification-dropdown";
 
 export default function DashboardLayout({
   children,
@@ -13,7 +14,8 @@ export default function DashboardLayout({
 }) {
   const [email, setEmail] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("Captain");
-  const [rank, setRank] = useState("Sailor");
+  const [lastName, setLastName] = useState("");
+  const [rank, setRank] = useState("Personal Ledger");
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
@@ -24,29 +26,13 @@ export default function DashboardLayout({
       if (!session) {
         router.push("/login");
       } else {
+        await syncUserToMongo(session.user);
+        const profileData = await getUserProfile(session.user.id);
         setEmail(session.user.email ?? "");
         const fullName = session.user.user_metadata?.full_name || "Captain";
-        setFirstName(fullName.split(" ")[0]);
-        
-        // Fetch spending to determine rank
-        const { data: expenses } = await supabase
-          .from("personal_expenses")
-          .select("amount")
-          .eq("user_id", session.user.id);
-          
-        let totalSpent = 0;
-        if (expenses) {
-          totalSpent = expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
-        }
-        
-        if (totalSpent >= 20000) {
-          setRank("Captain");
-        } else if (totalSpent >= 5000) {
-          setRank("Navigator");
-        } else {
-          setRank("Sailor");
-        }
-        
+        const parts = fullName.split(" ");
+        setFirstName(parts[0]);
+        setLastName(parts.length > 1 ? parts[1] : "");
         setLoading(false);
       }
     };
@@ -59,126 +45,149 @@ export default function DashboardLayout({
   };
 
   const navLinks = [
-    { name: "Home", href: "/dashboard", icon: "anchor" },
+    { name: "Dashboard", href: "/dashboard", icon: "dashboard" },
+    { name: "Groups", href: "/dashboard/groups", icon: "group" },
     { name: "Expenses", href: "/dashboard/expenses", icon: "receipt_long" },
-    { name: "Groups", href: "/dashboard/groups", icon: "groups" },
-    { name: "Profile", href: "/dashboard/profile", icon: "account_circle" },
+    { name: "Profile", href: "/dashboard/profile", icon: "person" },
   ];
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FFF9F2]">
+      <div className="min-h-screen flex items-center justify-center bg-surface">
         <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
+  const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || "SE";
+
   return (
     <>
-      {/* SideNavBar (Desktop) */}
-      <nav className="h-full w-64 fixed left-0 top-0 hidden md:flex flex-col bg-[#F8F3ED] shadow-sm z-40 border-r border-[#E8E0D5]">
-        <div className="flex flex-col h-full py-8 pr-4">
-          <div className="flex flex-col items-center mb-8 px-4">
-            <div className="w-20 h-20 rounded-full border-4 border-[#E2EFF6] overflow-hidden mb-3 bg-white flex items-center justify-center shrink-0 shadow-sm relative">
-              <span className="material-symbols-outlined text-4xl text-primary">sailing</span>
+      {/* SideNavBar */}
+      <aside className="hidden md:flex fixed top-0 left-0 h-screen w-64 flex-col justify-between bg-surface-container-lowest border-r border-outline-variant/40 shadow-sm z-30">
+        <div className="h-full flex flex-col p-4 space-y-6">
+          <div className="px-2 pt-2">
+            <div className="flex items-center gap-2.5 mb-5">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-on-primary">
+                <span className="material-symbols-outlined text-[20px]" style={{fontVariationSettings: "'FILL' 1"}}>account_balance_wallet</span>
+              </div>
+              <span className="text-headline-md font-bold text-primary tracking-tight">SplitEasy</span>
             </div>
-            <h2 className="font-title-md text-lg font-bold text-primary text-center">{firstName}'s Log</h2>
-            <p className="font-caption text-xs text-on-surface-variant text-center mt-1 uppercase tracking-wider">Rank: {rank}</p>
+            <div className="flex items-center gap-3 p-2 rounded-lg bg-surface border border-outline-variant/30">
+              <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-label-md font-semibold shrink-0">
+                {initials}
+              </div>
+              <div className="min-w-0">
+                <p className="text-label-md font-semibold text-on-surface truncate">{firstName} {lastName}</p>
+                <p className="text-body-sm text-on-surface-variant truncate">{rank}</p>
+              </div>
+            </div>
           </div>
-          <ul className="flex flex-col gap-2 flex-grow mt-4">
+          
+          <nav className="space-y-1 flex-1">
             {navLinks.map((link) => {
               const isActive = link.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(link.href);
               return (
-                <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className={`flex items-center gap-4 py-3 pl-8 pr-4 transition-all duration-200 ${isActive
-                      ? "text-primary font-bold border-l-[3px] border-primary bg-[#FFF9F2] rounded-r-full shadow-sm"
-                      : "text-on-surface-variant hover:text-primary hover:bg-[#FFF9F2]/50 rounded-r-full border-l-[3px] border-transparent"
-                      }`}
-                  >
-                    <span
-                      className="material-symbols-outlined"
-                      style={isActive ? { fontVariationSettings: "'FILL' 1" } : {}}
-                    >
-                      {link.icon}
-                    </span>
-                    <span className="font-label-md text-[15px]">{link.name}</span>
-                  </Link>
-                </li>
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg font-label-lg transition-colors duration-150 active:scale-[0.99] ${
+                    isActive
+                      ? "bg-secondary-container/20 text-primary font-semibold"
+                      : "text-on-surface-variant font-normal hover:bg-surface-container-low hover:text-on-surface"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[20px]" style={isActive ? { fontVariationSettings: "'FILL' 1" } : {}}>
+                    {link.icon}
+                  </span>
+                  <span>{link.name}</span>
+                </Link>
               );
             })}
-          </ul>
-          <div className="px-4 mt-auto flex flex-col gap-3">
-            <a
-              href="https://docs.google.com/forms/d/e/1FAIpQLSc29vVR4Jp_xGZsSkRMD4Ysbe_4SURA6BDFKpVdC5XU6HkaFg/viewform?usp=publish-editor"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-2 bg-[#E2EFF6] text-[#00668c] font-label-md text-[14px] py-2 px-4 rounded-lg shadow-sm hover:bg-[#D0E5F2] transition-all border border-[#00668c]/20"
-              title="Replace this link with your Google Form URL"
-            >
-              <span className="material-symbols-outlined text-[18px]">rate_review</span>
-              Give Feedback
-            </a>
-            <Link
-              href="/dashboard/expenses"
-              className="w-full flex items-center justify-center gap-2 bg-[#A33D14] text-white font-label-md text-[15px] py-3 px-4 rounded-lg shadow-sm hover:opacity-90 transition-all"
-            >
-              <span className="material-symbols-outlined">add</span>
-              Add Expense
+          </nav>
+
+          <div className="pt-2">
+            <Link href="/dashboard/expenses" className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-lg font-semibold shadow-sm transition-all duration-150 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              <span>Add Expense</span>
             </Link>
           </div>
-        </div>
-      </nav>
 
-      {/* TopAppBar (Mobile) */}
-      <header className="md:hidden flex justify-between items-center w-full px-container-padding py-4 fixed top-0 z-50 bg-[#F8F3ED]/80 backdrop-blur-md shadow-sm">
-        <h1 className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary">CruiseSplit</h1>
-        <div className="flex gap-4">
-          <button onClick={handleLogout} className="text-on-surface-variant hover:text-error transition-colors">
-            <span className="material-symbols-outlined">logout</span>
-          </button>
+          <div className="pt-3 border-t border-outline-variant/30 space-y-1">
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSc29vVR4Jp_xGZsSkRMD4Ysbe_4SURA6BDFKpVdC5XU6HkaFg/viewform?usp=publish-editor" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant font-label-lg font-normal hover:bg-surface-container-low hover:text-on-surface transition-colors duration-150 active:scale-[0.99]">
+              <span className="material-symbols-outlined text-[18px]">rate_review</span>
+              <span>Feedback</span>
+            </a>
+            <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-error font-label-lg font-normal hover:bg-error-container/20 transition-colors duration-150 active:scale-[0.99]">
+              <span className="material-symbols-outlined text-[18px]">logout</span>
+              <span>Log out</span>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* TopNavBar */}
+      <header className="hidden md:flex fixed top-0 left-64 right-0 h-16 bg-surface-container-lowest border-b border-outline-variant/40 shadow-sm z-20 justify-between items-center px-8">
+        <div className="flex items-center gap-4">
+          <span className="text-headline-sm font-bold text-primary tracking-tight">SplitEasy</span>
+          <span className="text-outline-variant/80">/</span>
+          <span className="text-label-lg text-on-surface-variant capitalize">
+            {pathname === "/dashboard" ? "Overview" : pathname.split("/").pop()}
+          </span>
+        </div>
+        <div className="flex items-center gap-4">
+          <NotificationDropdown />
+          <Link href="/dashboard/expenses" className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-container hover:bg-[#065F46] text-on-primary font-label-lg font-semibold shadow-sm transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#10B981] focus:ring-offset-2">
+            <span className="material-symbols-outlined text-[18px]">add</span>
+            <span>+ Add Expense</span>
+          </Link>
+          <div className="h-8 w-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-label-sm font-semibold">
+            {initials}
+          </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 md:ml-64 w-full px-container-padding py-section-margin mt-16 md:mt-0 pb-24 md:pb-section-margin max-w-7xl mx-auto min-h-screen bg-[#FFF9F2]">
-        {children}
-      </main>
+      {/* TopNavBar Mobile */}
+      <header className="md:hidden flex justify-between items-center w-full px-4 py-4 fixed top-0 z-50 bg-surface-container-lowest/80 backdrop-blur-md shadow-sm border-b border-outline-variant/40">
+        <div className="flex items-center gap-2">
+           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-on-primary">
+              <span className="material-symbols-outlined text-[20px]" style={{fontVariationSettings: "'FILL' 1"}}>account_balance_wallet</span>
+           </div>
+           <h1 className="text-headline-sm font-bold text-primary">SplitEasy</h1>
+        </div>
+        <button onClick={handleLogout} className="text-on-surface-variant hover:text-error transition-colors">
+          <span className="material-symbols-outlined">logout</span>
+        </button>
+      </header>
 
-      {/* Fixed Logout Button (Desktop) */}
-      <button
-        onClick={handleLogout}
-        className="hidden md:flex fixed bottom-8 right-8 items-center justify-center gap-2 bg-white text-[#A33D14] font-label-md text-[15px] py-3 px-6 rounded-full shadow-md border border-[#E8E0D5] hover:bg-[#F5E6E0] transition-all z-50"
-      >
-        <span className="material-symbols-outlined text-[18px]">logout</span>
-        Log out
-      </button>
-
-      {/* BottomNavBar (Mobile) */}
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 md:hidden bg-[#F8F3ED]/90 backdrop-blur-lg shadow-[0_-4px_12px_rgba(3,4,94,0.05)] rounded-t-xl">
+      {/* BottomNavBar Mobile */}
+      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-2 md:hidden bg-surface-container-lowest/90 backdrop-blur-lg border-t border-outline-variant/40 shadow-[0_-4px_12px_rgba(3,4,94,0.05)]">
         {navLinks.map((link) => {
           const isActive = link.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(link.href);
           return (
             <Link
               key={link.name}
               href={link.href}
-              className={`flex flex-col items-center justify-center p-2 transition-all duration-150 ${isActive
-                ? "bg-secondary-container text-on-secondary-container rounded-full scale-90"
-                : "text-on-surface-variant hover:bg-secondary-container/50 rounded-lg"
-                }`}
+              className={`flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-150 ${
+                isActive
+                  ? "text-primary"
+                  : "text-on-surface-variant hover:bg-surface-container-low"
+              }`}
             >
-              <span
-                className="material-symbols-outlined"
-                style={isActive ? { fontVariationSettings: "'FILL' 1" } : {}}
-              >
+              <span className="material-symbols-outlined" style={isActive ? { fontVariationSettings: "'FILL' 1" } : {}}>
                 {link.icon}
               </span>
-              <span className="font-caption text-caption mt-1">{link.name}</span>
+              <span className="text-[10px] mt-1 font-medium">{link.name}</span>
             </Link>
           );
         })}
       </nav>
+
+      <main className="md:ml-64 md:pt-16 pt-20 pb-20 md:pb-8 min-h-screen bg-transparent relative z-10">
+        <div className="p-4 md:p-8">
+          {children}
+        </div>
+      </main>
     </>
   );
 }

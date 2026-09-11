@@ -10,6 +10,8 @@ import { useMemo } from "react";
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { getGroupDetails, addGroupMember, addGroupExpense, deleteGroupExpense, addSettlement } from "@/app/actions/groupDetails";
+import { addGroupMessage, getGroupMessages } from "@/app/actions/messages";
 
 const CATEGORIES = ["Food", "Transport", "Hotel", "Activities", "Other"];
 const CATEGORY_COLORS: Record<string, string> = {
@@ -117,12 +119,10 @@ export default function GroupDetailPage() {
     fetchGroupData();
     fetchMessages();
 
-    // Subscribe to realtime messages
+    // Subscribe to realtime messages using Supabase Broadcast instead of Postgres changes
     const channel = supabase.channel(`group_chat_${groupId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` }, () => {
+      .on('broadcast', { event: 'new_message' }, () => {
         fetchMessages();
-        // If we are viewing the page, mark as read
-        if (userId) markAsRead(userId);
       })
       .subscribe();
 
@@ -131,19 +131,19 @@ export default function GroupDetailPage() {
     };
   }, [groupId, userId]);
 
-  const markAsRead = async (uid: string) => {
-    await supabase.from("group_members")
-      .update({ last_read_at: new Date().toISOString() })
-      .match({ group_id: groupId, user_id: uid });
-  };
-
   const fetchMessages = async () => {
-    const { data } = await supabase
-      .from("group_messages")
-      .select("id, user_id, message, created_at, sender:users!group_messages_user_id_fkey(full_name)")
-      .eq("group_id", groupId)
-      .order("created_at", { ascending: true });
-    if (data) setMessages(data);
+    // Fetch from MongoDB
+    const res = await getGroupMessages(groupId);
+    if (res.success && res.data) {
+      const mappedMessages = res.data.map((msg: any) => ({
+        id: msg._id,
+        user_id: msg.senderId.supabaseId,
+        message: msg.message,
+        created_at: msg.createdAt,
+        sender: { full_name: msg.senderId.full_name }
+      }));
+      setMessages(mappedMessages);
+    }
   };
 
   const fetchGroupData = async () => {
@@ -154,35 +154,65 @@ export default function GroupDetailPage() {
     }
     const uid = session.user.id;
     setUserId(uid);
-    markAsRead(uid);
 
-    // Parallel fetch
-    const [groupRes, membersRes, expensesRes, settlementsRes] = await Promise.all([
-      supabase.from("shared_groups").select("id, name, created_at, created_by, creator:users!shared_groups_created_by_fkey(full_name)").eq("id", groupId).single(),
-      supabase.from("group_members").select("id, user_id, joined_at, users(full_name, email, upi_id)").eq("group_id", groupId),
-      supabase.from("group_expenses").select("id, description, amount, paid_by, created_at, category, splits, original_amount, currency, exchange_rate, payer:users!group_expenses_paid_by_fkey(full_name)").eq("group_id", groupId).order("created_at", { ascending: false }),
-      supabase.from("group_settlements").select("id, paid_by, paid_to, amount, created_at").eq("group_id", groupId)
-    ]);
+    // Fetch data using Mongoose server action
+    const res = await getGroupDetails(groupId);
 
-    if (groupRes.error) {
+    if (!res.success || !res.data) {
       router.push("/dashboard/groups");
       return;
     }
 
-    setGroup(groupRes.data as unknown as GroupDetails);
-    
-    const fetchedMembers = (membersRes.data || []) as unknown as GroupMemberRow[];
-    setMembers(fetchedMembers);
-    
-    const fetchedExpenses = (expensesRes.data || []) as unknown as GroupExpenseRow[];
-    setExpenses(fetchedExpenses);
+    const { group: groupData, expenses: expensesData, settlements: settlementsData } = res.data;
 
-    setRawSettlements(settlementsRes.data || []);
-    const fetchedSettlements = (settlementsRes.data || []).map(s => ({ paidBy: s.paid_by, paidTo: s.paid_to, amount: s.amount }));
+    // Map Mongoose output to match expected component state structure
+    const mappedGroup = {
+      id: groupData._id,
+      name: groupData.name,
+      created_at: groupData.createdAt,
+      created_by: groupData.createdBy.supabaseId,
+      creator: { full_name: groupData.createdBy.full_name }
+    };
+
+    setGroup(mappedGroup as unknown as GroupDetails);
+    
+    const mappedMembers = groupData.members.map((m: any) => ({
+      id: m._id,
+      user_id: m.supabaseId,
+      joined_at: groupData.createdAt,
+      users: { full_name: m.full_name, email: m.email, upi_id: m.upi_id }
+    }));
+    setMembers(mappedMembers as unknown as GroupMemberRow[]);
+    
+    const mappedExpenses = expensesData.map((e: any) => ({
+      id: e._id,
+      description: e.description,
+      amount: e.amount,
+      paid_by: e.paidBy.supabaseId,
+      created_at: e.createdAt,
+      category: e.category,
+      splits: e.splits,
+      original_amount: e.original_amount,
+      currency: e.currency,
+      exchange_rate: e.exchange_rate,
+      payer: { full_name: e.paidBy.full_name }
+    }));
+    setExpenses(mappedExpenses as unknown as GroupExpenseRow[]);
+
+    const mappedRawSettlements = settlementsData.map((s: any) => ({
+      id: s._id,
+      paid_by: s.paidBy.supabaseId,
+      paid_to: s.paidTo.supabaseId,
+      amount: s.amount,
+      created_at: s.createdAt
+    }));
+    setRawSettlements(mappedRawSettlements);
+
+    const fetchedSettlements = mappedRawSettlements.map((s: any) => ({ paidBy: s.paid_by, paidTo: s.paid_to, amount: s.amount }));
     setSettlementsData(fetchedSettlements);
 
     // Calculate settlements
-    updateSettlements(fetchedMembers, fetchedExpenses, fetchedSettlements);
+    updateSettlements(mappedMembers, mappedExpenses, fetchedSettlements);
 
     setLoading(false);
   };
@@ -272,29 +302,10 @@ export default function GroupDetailPage() {
       return;
     }
 
-    // Check if user exists
-    const { data: users, error: userError } = await supabase.from("users").select("id, full_name").eq("email", email);
+    const result = await addGroupMember(groupId, email);
 
-    if (userError || !users || users.length === 0) {
-      setError("No user found with this email. They need to sign up first.");
-      setSubmittingMember(false);
-      return;
-    }
-
-    const targetUserId = users[0].id;
-
-    // Check if already in group
-    if (members.some(m => m.user_id === targetUserId)) {
-      setError("This user is already a member of this group.");
-      setSubmittingMember(false);
-      return;
-    }
-
-    // Add to group
-    const { error: addError } = await supabase.from("group_members").insert([{ group_id: groupId, user_id: targetUserId }]);
-
-    if (addError) {
-      setError("Could not add member.");
+    if (!result.success) {
+      setError(result.error || "Could not add member.");
     } else {
       setSuccess("Member added successfully!");
       setNewMemberEmail("");
@@ -325,11 +336,11 @@ export default function GroupDetailPage() {
     let rate = 1;
     if (expenseCurrency !== "INR") {
       try {
-        const currencyLower = expenseCurrency.toLowerCase();
-        const res = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${currencyLower}.json`);
+        // Use our custom internal API endpoint
+        const res = await fetch(`/api/currency?currency=${expenseCurrency}`);
         if (!res.ok) throw new Error("Failed to fetch exchange rate");
         const data = await res.json();
-        rate = data[currencyLower]["inr"];
+        rate = data.rate;
       } catch (err) {
         console.error(err);
         setError(`Failed to get live exchange rate for ${expenseCurrency}. Please try again later.`);
@@ -368,9 +379,13 @@ export default function GroupDetailPage() {
       }
     }
 
-    const { error: expError } = await supabase.from("group_expenses").insert([{
-      group_id: groupId,
-      paid_by: userId,
+    if (!userId) {
+      setError("User not authenticated.");
+      setSubmittingExpense(false);
+      return;
+    }
+
+    const result = await addGroupExpense(groupId, userId, {
       description: expenseDesc.trim(),
       amount: baseAmount,
       category: expenseCategory,
@@ -378,10 +393,10 @@ export default function GroupDetailPage() {
       original_amount: expenseCurrency !== "INR" ? amt : null,
       currency: expenseCurrency,
       exchange_rate: rate
-    }]);
+    });
 
-    if (expError) {
-      setError("Something went wrong. Please try again later.");
+    if (!result.success) {
+      setError(result.error || "Something went wrong. Please try again later.");
     } else {
       setSuccess("Group expense added successfully!");
       setExpenseDesc("");
@@ -398,18 +413,24 @@ export default function GroupDetailPage() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || sendingMsg) return;
+    if (!newMessage.trim() || sendingMsg || !userId) return;
     
     setSendingMsg(true);
-    const { error } = await supabase.from("group_messages").insert([{
-      group_id: groupId,
-      user_id: userId,
-      message: newMessage.trim()
-    }]);
+    
+    const result = await addGroupMessage(groupId, userId, newMessage.trim());
 
-    if (!error) {
+    if (result.success) {
       setNewMessage("");
       fetchMessages(); // Update UI immediately for the sender
+      
+      // Broadcast to other users via Supabase Realtime Pub/Sub
+      supabase.channel(`group_chat_${groupId}`).send({
+        type: 'broadcast',
+        event: 'new_message',
+        payload: { trigger: true }
+      });
+    } else {
+      console.error("Failed to send message:", result.error);
     }
     setSendingMsg(false);
   };
@@ -417,9 +438,9 @@ export default function GroupDetailPage() {
   const handleDeleteExpense = async (id: string) => {
     if (!confirm("Are you sure you want to delete this expense?")) return;
 
-    const { error } = await supabase.from("group_expenses").delete().eq("id", id);
-    if (error) {
-      setError("Could not delete expense.");
+    const result = await deleteGroupExpense(id);
+    if (!result.success) {
+      setError(result.error || "Could not delete expense.");
     } else {
       setSuccess("Expense deleted.");
       const updatedExpenses = expenses.filter(e => e.id !== id);
@@ -432,14 +453,9 @@ export default function GroupDetailPage() {
   const handleMarkAsPaid = async () => {
     if (!selectedTx || paying) return;
     setPaying(true);
-    const { error } = await supabase.from("group_settlements").insert([{
-      group_id: groupId,
-      paid_by: selectedTx.from,
-      paid_to: selectedTx.to,
-      amount: selectedTx.amount
-    }]);
+    const result = await addSettlement(groupId, selectedTx.from, selectedTx.to, selectedTx.amount);
 
-    if (!error) {
+    if (result.success) {
       setSuccess(`Successfully paid ₹${selectedTx.amount} to ${selectedTx.toName}`);
       setShowQrModal(false);
       
@@ -468,7 +484,7 @@ export default function GroupDetailPage() {
       setSelectedTx(null);
       fetchGroupData();
     } else {
-      setError("Failed to mark as paid.");
+      setError(result.error || "Failed to mark as paid.");
     }
     setPaying(false);
   };
@@ -506,27 +522,41 @@ export default function GroupDetailPage() {
   const generateGroupPDF = async () => {
     if (!group) return;
     const doc = new jsPDF();
+    doc.setFont("times", "normal");
     
-    // Title
-    doc.setFontSize(20);
+    // Draw Wallet Logo native vector function
+    const drawLogo = (x: number, y: number, scale: number = 1) => {
+      doc.setDrawColor(0, 93, 144);
+      doc.setFillColor(0, 93, 144);
+      doc.roundedRect(x, y, 8 * scale, 6 * scale, 1 * scale, 1 * scale, 'FD');
+      doc.setFillColor(255, 255, 255);
+      doc.rect(x + 5 * scale, y + 2 * scale, 3 * scale, 2 * scale, 'FD');
+    };
+
+    // Header Logo & Title
+    drawLogo(14, 15, 1.2);
+    doc.setFontSize(22);
     doc.setTextColor(0, 93, 144);
-    doc.text(`Group Summary: ${group.name}`, 14, 22);
+    doc.text(`SplitEasy Ledger`, 26, 21.5);
     
-    // Subtitle / Date
+    // Group Name & Date
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Group: ${group.name}`, 14, 34);
+    
     doc.setFontSize(10);
     doc.setTextColor(100, 116, 139);
-    doc.text(`Created By: ${group.creator.full_name}`, 14, 30);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 35);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}  •  Created By: ${group.creator.full_name}`, 14, 40);
     
     // Summary Stats
     const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
     doc.setFontSize(12);
     doc.setTextColor(0, 0, 0);
-    doc.text(`Total Spent: Rs. ${totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 14, 45);
-    doc.text(`Total Members: ${members.length}`, 14, 52);
-    doc.text(`Total Expenses: ${expenses.length}`, 14, 59);
+    doc.text(`Total Spent: Rs. ${totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 14, 50);
+    doc.text(`Total Members: ${members.length}`, 14, 57);
+    doc.text(`Total Expenses: ${expenses.length}`, 14, 64);
 
-    let currentY = 70;
+    let currentY = 75;
 
     // Members Table
     doc.setFontSize(14);
@@ -541,7 +571,7 @@ export default function GroupDetailPage() {
       startY: currentY,
       theme: 'grid',
       headStyles: { fillColor: [0, 93, 144] },
-      styles: { fontSize: 10, cellPadding: 3 }
+      styles: { fontSize: 10, cellPadding: 3, font: "times" }
     });
     currentY = (doc as any).lastAutoTable.finalY + 15;
 
@@ -569,7 +599,7 @@ export default function GroupDetailPage() {
         startY: currentY,
         theme: 'striped',
         headStyles: { fillColor: [163, 61, 20] }, // Secondary color theme
-        styles: { fontSize: 10, cellPadding: 3 }
+        styles: { fontSize: 10, cellPadding: 3, font: "times" }
       });
       currentY = (doc as any).lastAutoTable.finalY + 15;
     }
@@ -600,28 +630,11 @@ export default function GroupDetailPage() {
         startY: currentY,
         theme: 'striped',
         headStyles: { fillColor: [0, 93, 144] },
-        styles: { fontSize: 10, cellPadding: 3 }
+        styles: { fontSize: 10, cellPadding: 3, font: "times" }
       });
     }
 
     // Add Footer to all pages
-    const getLogoBase64 = (): Promise<string> => {
-      return new Promise((resolve) => {
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#003e5c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/><circle cx="12" cy="5" r="3"/></svg>`;
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = 64;
-          canvas.height = 64;
-          const ctx = canvas.getContext('2d');
-          if (ctx) ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL('image/png'));
-        };
-        img.src = 'data:image/svg+xml;base64,' + btoa(svg);
-      });
-    };
-    const logoData = await getLogoBase64();
-
     const pageCount = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
@@ -634,17 +647,17 @@ export default function GroupDetailPage() {
       doc.line(14, pageHeight - 20, pageWidth - 14, pageHeight - 20);
 
       // Logo
-      doc.addImage(logoData, 'PNG', 14, pageHeight - 15, 6, 6);
+      drawLogo(14, pageHeight - 15, 0.8);
       
       // Brand Text
       doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
+      doc.setFont("times", "bolditalic");
       doc.setTextColor(0, 62, 92);
-      doc.text("CruiseSplit", 22, pageHeight - 10.5);
+      doc.text("SplitEasy", 22, pageHeight - 10.5);
       
       // Date and Time
       doc.setFontSize(9);
-      doc.setFont("helvetica", "normal");
+      doc.setFont("times", "normal");
       doc.setTextColor(100, 116, 139);
       const dateStr = new Date().toLocaleString(undefined, { 
         dateStyle: 'medium', 
@@ -655,7 +668,7 @@ export default function GroupDetailPage() {
       doc.text(generatedText, pageWidth - 14 - textWidth, pageHeight - 11);
     }
 
-    doc.save(`${group.name.replace(/\\s+/g, '-').toLowerCase()}-trip-summary.pdf`);
+    doc.save(`${group.name.replace(/\s+/g, '-').toLowerCase()}-spliteasy-summary.pdf`);
   };
 
   if (loading) {
