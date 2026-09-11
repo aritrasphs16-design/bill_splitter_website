@@ -113,6 +113,7 @@ export default function ProfilePage() {
       if (authError) throw authError;
 
       setSuccess("Profile updated successfully!");
+      window.dispatchEvent(new Event('profileUpdated'));
       setTimeout(() => setSuccess(null), 3000);
       
     } catch (err: any) {

@@ -29,14 +29,20 @@ export default function DashboardLayout({
         await syncUserToMongo(session.user);
         const profileData = await getUserProfile(session.user.id);
         setEmail(session.user.email ?? "");
-        const fullName = session.user.user_metadata?.full_name || "Captain";
+        
+        // Use the name from MongoDB which is always up-to-date, fallback to auth session metadata
+        const fullName = profileData?.user?.full_name || session.user.user_metadata?.full_name || "Captain";
         const parts = fullName.split(" ");
         setFirstName(parts[0]);
-        setLastName(parts.length > 1 ? parts[1] : "");
+        setLastName(parts.length > 1 ? parts.slice(1).join(" ") : "");
         setLoading(false);
       }
     };
+    
     checkUser();
+
+    window.addEventListener('profileUpdated', checkUser);
+    return () => window.removeEventListener('profileUpdated', checkUser);
   }, [router]);
 
   const handleLogout = async () => {
