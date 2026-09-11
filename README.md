@@ -1,61 +1,86 @@
-# 🏝️ CruiseSplit (Bill Splitter)
+<div align="center">
+  <img src="public/preview1.png" alt="SplitEasy App Interface" width="800">
+  
+  <br />
+  <br />
 
-CruiseSplit is a modern, responsive web application designed to take the headache out of splitting expenses on group trips. Whether you're on a Caribbean Cruise, backpacking across Europe, or just managing weekend getaway costs with friends, CruiseSplit automatically tracks your shared expenses, calculates fair shares, and uses a **Minimum Transaction Settlement Algorithm** so you know exactly who owes who, with the absolute fewest number of transfers required.
+  # 💸 SplitEasy v3.0
+
+  **The ultimate modern ledger for shared expenses, group trips, and financial harmony.**
+  <br />
+
+  [![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+  [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+  [![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)](https://mongodb.com/)
+  [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
+  [![Framer Motion](https://img.shields.io/badge/Framer_Motion-black?style=for-the-badge&logo=framer&logoColor=blue)](https://www.framer.com/motion/)
+
+</div>
+
+---
+
+## ✨ Overview
+
+**SplitEasy** takes the headache out of tracking shared expenses. Built from the ground up for modern travelers and roommates, SplitEasy replaces chaotic manual spreadsheets with an intelligent, automated financial ledger. 
+
+With real-time multi-currency conversions, smart settlement algorithms, and one-click group access, it guarantees that everyone's financial records are perfectly synchronized and that debts are settled efficiently.
 
 ## 🚀 Key Features
 
-*   **Captain's Dashboard**: A high-level overview of your total spent, active fleets (groups), and exactly how much you owe or are owed.
-*   **Personal Manifest**: Log and categorize your personal daily expenses. Features interactive Donut Charts for spending analytics and a dynamic Monthly Budget tracker that changes color as you approach your limit.
-*   **Shared Fleets (Groups)**: Create trips and invite crew members.
-*   **Smart Settlements**: Add shared group expenses and let the app calculate the net balances. The algorithm ensures everyone gets squared away with the minimum number of transactions possible!
-*   **Custom Splits**: Not everything is split equally! Support for splitting by Exact Amounts or Percentages.
-*   **Multi-Currency Support**: Traveling internationally? Enter expenses in USD, EUR, GBP, etc., and let the app instantly convert it to your base currency using real-time rates from the Frankfurter API!
-*   **100% Financial Transparency (Audit Trail)**: A detailed, chronological Timeline logs every action in the group—from members joining to expenses added and debts settled.
-*   **Settle Up with UPI**: Easily pay your friends using automatically generated UPI QR codes straight from the app!
-*   **Live Discussions**: Built-in real-time group chat so you can discuss expenses and coordinate plans seamlessly.
-*   **Authentication**: Secure signup and login powered by Supabase.
-*   **Live Weather & Clock Widget**: A nifty dashboard addition that grabs the current weather for your location and displays the real-time local clock.
+- **📊 Beautiful Spending Analytics:** Visualize your group's spending habits with interactive, colorful donut charts tracking every category.
+- **⚡ Smart Settlements:** Our advanced algorithm minimizes the total number of transactions needed to settle all debts within a group. No more complicated overlapping IOUs.
+- **🌍 Multi-Currency Support:** Traveling abroad? Add expenses in any currency and SplitEasy handles the exact, real-time conversions instantly.
+- **💳 Quick UPI Integration:** Settle debts seamlessly. Add your UPI ID so friends can tap and pay you back directly from their banking apps.
+- **🔔 Smart Nudges:** Automated email notifications gently remind friends to settle up, avoiding awkward conversations.
+- **🤝 Instant Group Access:** Generate a unique 6-digit access code for your trip and let anyone join instantly from their phone. No clunky onboarding required.
+- **📄 Professional PDF Export:** Download highly professional PDF reports summarizing total trip expenditures and individual balances.
 
-## 🛠️ Technology Stack
+## 🛠️ Tech Stack
 
-*   **Framework:** [Next.js 15](https://nextjs.org/) (App Router)
-*   **Styling:** Tailwind CSS v4 (with custom CSS variables for a premium, nautical glassmorphism aesthetic)
-*   **Database & Auth:** [Supabase](https://supabase.com/) (PostgreSQL + Row Level Security)
-*   **Icons:** Google Material Symbols
+SplitEasy is built using a modern, scalable, and highly responsive technology stack:
 
-## 💻 Running Locally
+- **Frontend:** Next.js (App Router), React, Tailwind CSS, Framer Motion for buttery-smooth animations.
+- **Backend:** Next.js Server Actions & API Routes.
+- **Authentication:** Supabase Auth (Secure Email/Password and OAuth).
+- **Database:** MongoDB Atlas (Mongoose ORM).
+- **Styling:** Custom CSS Custom Properties (`globals.css`), Lucide Icons, and Glassmorphism aesthetics.
+- **Exporting:** jsPDF and jsPDF-AutoTable for dynamic document generation.
 
-To run this project on your local machine, you'll need Node.js installed.
+## 💻 Getting Started Locally
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/aritrasphs16-design/bill_splitter_website.git
-    cd bill_splitter_website
-    ```
+To run SplitEasy locally, you will need Node.js installed on your machine.
 
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
+### 1. Clone the repository
+```bash
+git clone https://github.com/aritrasphs16-design/bill_splitter_website.git
+cd bill_splitter_website
+```
 
-3.  **Environment Variables:**
-    Create a `.env.local` file in the root directory and add your Supabase credentials:
-    ```env
-    NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-    ```
+### 2. Install Dependencies
+```bash
+npm install
+```
 
-4.  **Database Setup:**
-    Execute the SQL commands found in `database/schema.sql` within your Supabase SQL Editor to instantly generate the tables, triggers, and Row Level Security (RLS) policies.
+### 3. Configure Environment Variables
+Create a `.env.local` file in the root of your project and populate it with your API keys:
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+MONGODB_URI=your_mongodb_connection_string
+```
 
-5.  **Start the development server:**
-    ```bash
-    npm run dev
-    ```
+### 4. Run the Development Server
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-6.  Open [http://localhost:3000](http://localhost:3000) in your browser to see the app.
+## ☁️ Deployment
 
-## 🚢 Deployment
+This project is fully optimized for deployment on **Vercel**. 
+When deploying, ensure that your `Environment Variables` are properly configured in your Vercel Project Settings and that your MongoDB IP Access List is set to allow connections from `0.0.0.0/0`.
 
-This application is optimized for deployment on [Vercel](https://vercel.com/). 
-When deploying, ensure you add the `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to your Vercel Environment Variables. Finally, remember to add your live Vercel URL to your Supabase Authentication Site URL settings.
+---
+<div align="center">
+  <i>Built with ❤️ for financial peace of mind.</i>
+</div>

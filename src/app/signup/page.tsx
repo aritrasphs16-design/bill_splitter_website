@@ -104,15 +104,7 @@ export default function Signup() {
               </div>
             </div>
 
-            <div className="p-4 bg-primary-container/40 text-on-surface rounded-lg border-l-4 border-primary flex items-start gap-3">
-              <span className="material-symbols-outlined text-primary mt-0.5">lightbulb</span>
-              <div>
-                <p className="font-label-md text-sm font-bold text-primary mb-1">Recommendation (Recommended)</p>
-                <p className="font-body-md text-xs text-on-surface-variant">
-                  This project is in active development. Supabase limits email verifications to <strong>3 per hour</strong>. We highly recommend signing up with <strong>Google</strong> to bypass this limit and avoid delays.
-                </p>
-              </div>
-            </div>
+
           </div>
         )}
 
