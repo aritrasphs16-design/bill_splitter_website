@@ -55,7 +55,7 @@ export default function PrivacyPolicy() {
           <section className="space-y-4">
             <h2 className="font-display-md text-2xl font-bold text-[var(--color-on-surface)]">4. Data Security</h2>
             <p>
-              We utilize Supabase (a top-tier Backend-as-a-Service) to store your data securely. We rely on industry-standard encryption, Row Level Security (RLS), and modern authentication practices to keep your data safe from unauthorized access.
+              We utilize a dual-database architecture to ensure maximum security. <strong>Supabase</strong> handles all user authentication securely, relying on industry-standard encryption and modern authentication practices. Meanwhile, your actual application data (like groups, expenses, and balances) is securely stored in <strong>MongoDB Atlas</strong>, which utilizes advanced network isolation and data-at-rest encryption to keep your financial records safe from unauthorized access.
             </p>
           </section>
 
